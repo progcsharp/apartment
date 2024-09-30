@@ -1,0 +1,93 @@
+Создай SQL запрос для создания таблиц 
+User:
+fullname: text
+phone: text
+mail: text
+password: text
+is_active: bool
+is_verified: bool
+tarif: choice(standart, business, premium)
+balance: int
+date_before: date
+
+region:
+name:text
+
+city:
+name:
+region:region(поле для связи с таблицей region)
+
+apartment:
+name: text
+
+convenience:
+name: text
+photo: link to photo 
+
+object:
+name: text
+author: user(поле для связи с таблицей user)
+region: region(поле для связи с таблицей region)
+city: city(поле для связи с таблицей city)
+apartment:apartment(поле для связи с таблицей apartment)
+
+так же должна быть связь manytomany между таблицами (object:convenience)
+
+ответ:
+
+CREATE TABLE "user" (
+    id SERIAL PRIMARY KEY,
+    fullname TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    mail TEXT NOT NULL,
+    password TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    is_verified BOOLEAN DEFAULT FALSE,
+    tarif VARCHAR(20) CHECK (tarif IN ('standart', 'business', 'premium')) NOT NULL,
+    balance INT DEFAULT 0,
+    date_before DATE
+);
+
+CREATE TABLE "region" (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE "city" (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    region_id INT REFERENCES "region"(id) ON DELETE CASCADE
+);
+
+CREATE TABLE "apartment" (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE "convenience" (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    photo TEXT
+);
+
+CREATE TABLE "object" (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    author_id INT REFERENCES "user"(id) ON DELETE CASCADE,
+    city_id INT REFERENCES "city"(id) ON DELETE CASCADE,
+    apartment_id INT REFERENCES "apartment"(id) ON DELETE CASCADE,
+    description TEXT,
+    price INT,
+    area TEXT,
+    room_count INT,  
+    bed_count INT,  
+    floor INT,
+    prepayment_percentage INT CHECK (prepayment_percentage IN (0, 50, 100)),  
+    photos TEXT[]  
+);
+
+CREATE TABLE "object_convenience" (
+    object_id INT REFERENCES "object"(id) ON DELETE CASCADE,
+    convenience_id INT REFERENCES "convenience"(id) ON DELETE CASCADE,
+    PRIMARY KEY (object_id, convenience_id)
+);
