@@ -15,6 +15,9 @@ from routers.region import router as region_router
 from routers.city import router as city_router
 from routers.apartment import router as apartment_router
 from routers.convenience import router as convenience_router
+from routers.object import router as object_router
+from routers.client import router as client_router
+from routers.reservation import router as reservation_router
 
 app = FastAPI()
 
@@ -24,6 +27,9 @@ app.include_router(router=region_router)
 app.include_router(router=city_router)
 app.include_router(router=apartment_router)
 app.include_router(router=convenience_router)
+app.include_router(router=object_router)
+app.include_router(router=client_router)
+app.include_router(router=reservation_router)
 
 
 @manager.user_loader()

@@ -6,7 +6,7 @@ from db.handler.delete import delete_apartment
 from db.handler.get import get_all_apartment, get_apartment_by_id
 from schemas.apartment import ApartmentResponseList, ApartmentResponse, ApartmentCreate
 
-router = APIRouter(prefix="/apartment", responses={404: {"description": "Not found"}})
+router = APIRouter(prefix="/property-type", responses={404: {"description": "Not found"}})
 
 
 @router.get("/all", response_model=ApartmentResponseList)
@@ -16,7 +16,7 @@ async def get_all(db=Depends(get_db)):
 
 
 @router.get("/id/", response_model=ApartmentResponse)
-async def get(id, db=Depends(get_db)):
+async def get(id: int, db=Depends(get_db)):
     apartment = await get_apartment_by_id(id, db)
     return apartment
 

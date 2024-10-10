@@ -1,7 +1,11 @@
+from datetime import date
+
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from db import make_session, User, Region, City
+from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, Reservation
+from service.file import save_file, save_file_list
 from service.security import hash_password
 
 
@@ -37,9 +41,101 @@ async def create_city(city_data, session):
 
 
 async def create_apartment(apartment_data, session):
-    apartment = Region(name=apartment_data.name)
+    apartment = Apartment(name=apartment_data.name)
 
     async with session() as session:
         session.add(apartment)
         await session.commit()
     return apartment
+
+
+async def create_convenience(convenience_data, file, session):
+    # url = await save_file(file)
+
+    convenience = Convenience(name=convenience_data.name, photo="url")
+
+    async with session() as session:
+        session.add(convenience)
+        await session.commit()
+
+    return convenience
+
+
+async def create_object(object_data, files, user_id, session):
+    # file_list = await save_file_list(files)
+    object = Object(name=object_data.name, author_id=1, city_id=object_data.city_id,
+                    apartment_id=object_data.apartment_id, description=object_data.description, price=object_data.price,
+                    area=object_data.area, room_count=object_data.room_count, bed_count=object_data.bed_count,
+                    floor=object_data.floor, min_ded=object_data.min_ded,
+                    prepayment_percentage=object_data.prepayment_percentage, photos=["file_list"],
+                    address=object_data.address)
+
+    async with session() as session:
+        session.add(object)
+        await session.commit()
+
+        for convenience_id in object_data.convenience:
+            object_convenience = ObjectConvenience(object_id=object.id, convenience_id=convenience_id)
+            session.add(object_convenience)
+            await session.commit()
+
+        query = select(Object).where(Object.id == object.id).options(selectinload(Object.city).subqueryload(City.region)). \
+            options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
+            options(selectinload(Object.conveniences))
+        result = await session.execute(query)
+        object = result.scalar_one_or_none()
+
+    return object
+
+
+async def create_client(client_data, user_id, session):
+    client = Client(fullname=client_data.fullname, reiting=client_data.reiting,
+                    phone=client_data.phone, email=client_data.email)
+
+    async with session() as session:
+        session.add(client)
+        await session.commit()
+
+        client_user = UserClient(user_id=user_id, client_id=client.id)
+
+        session.add(client_user)
+        await session.commit()
+
+        query = select(Client).where(Client.id == client.id)
+        result = await session.execute(query)
+        client = result.scalar_one_or_none()
+    return client
+
+
+async def create_reservation(reservation_data, session):
+    reservation = Reservation(object_id=reservation_data.object_id, client_id=reservation_data.client_id,
+                              start_date=reservation_data.start_date, end_date=reservation_data.end_date,
+                              status=reservation_data.status, description=reservation_data.description)
+
+    async with session()as session:
+        if await check_available_time(session, reservation_data.object_id, reservation_data.start_date, reservation_data.end_date):
+            session.add(reservation)
+            await session.commit()
+        else:
+            raise
+
+    return reservation
+
+
+async def check_available_time(session: AsyncSession, object_id: int, start_date: date, end_date: date) -> bool:
+    query = select(Reservation).where(
+        (Reservation.object_id == object_id) &
+        ((Reservation.start_date < end_date) & (Reservation.end_date > start_date))
+    ).execution_options(populate_existing=True)
+
+    result = await session.execute(query)
+    existing_reservations = result.scalars().all()
+    print(existing_reservations)
+    if existing_reservations:
+        for res in existing_reservations:
+            if (start_date >= res.start_date and start_date < res.end_date) or \
+                    (end_date > res.start_date and end_date <= res.end_date) or \
+                    (start_date <= res.start_date and end_date >= res.end_date):
+                return False
+
+    return True
