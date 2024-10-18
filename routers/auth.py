@@ -15,7 +15,7 @@ from db import redis_cache
 from db.engine import get_db
 from db.handler.create import create_user
 from db.handler.get import get_user
-from db.handler.update import update_user_activate
+from db.handler.update import update_user_verified
 from schemas.user import UserRegister, UserActivate, UserLogin, UserResponse
 from service.security import verify_password, manager
 
@@ -55,7 +55,7 @@ async def activate(response: Response, user: UserActivate, cache: InMemoryCacheB
     code = await cache.get(user.mail)
     if code:
         if code == user.code:
-            user_res = await update_user_activate(user.mail, db)
+            user_res = await update_user_verified(user.mail, db)
         else:
             raise {"user": "Code not sucessful"}
     else:
@@ -96,3 +96,5 @@ async def login_auth(response: Response, user: UserActivate, cache: InMemoryCach
     )
     manager.set_cookie(response, token)
     return user_res
+
+

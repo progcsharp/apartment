@@ -4,6 +4,7 @@ from fastapi_cache import caches, close_caches
 from fastapi_cache.backends.memory import CACHE_KEY, InMemoryCacheBackend
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
+from fastapi.middleware.cors import CORSMiddleware
 
 from db import User
 from db.engine import DBContext
@@ -18,11 +19,24 @@ from routers.convenience import router as convenience_router
 from routers.object import router as object_router
 from routers.client import router as client_router
 from routers.reservation import router as reservation_router
+from routers.tariff import router as tariff_router
 
 app = FastAPI()
 
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 app.include_router(router=auth_router)
 app.include_router(router=user_router)
+app.include_router(router=tariff_router)
 app.include_router(router=region_router)
 app.include_router(router=city_router)
 app.include_router(router=apartment_router)

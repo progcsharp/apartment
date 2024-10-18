@@ -1,5 +1,5 @@
 from datetime import date
-from typing import List
+from typing import List, Union
 
 from pydantic import BaseModel
 
@@ -12,11 +12,15 @@ class UserLogin(UserBase):
     password: str
 
 
+class Tariff(BaseModel):
+    id: int
+    name: str
+
+
 class UserRegister(UserBase):
     fullname: str
     phone: str
     password: str
-    tarif: str = "standart"
     is_active: bool = False
     is_verified: bool = False
     is_admin: bool = False
@@ -32,15 +36,27 @@ class UserResponse(UserBase):
     id: int
     fullname: str
     phone: str
-    tarif: str
     is_active: bool
     is_verified: bool
     is_admin: bool
     balance: int
     date_before: date
+    tariff: Union[Tariff, None]
 
 
 class UserResponseList(BaseModel):
     users: List[UserResponse]
 
 
+class UserTariffActivate(BaseModel):
+    user_id: int
+    tariff_id: int
+    balance: int
+
+
+class UserResetPassword(BaseModel):
+    new_password: str
+
+
+class UserActivate(BaseModel):
+    id: int

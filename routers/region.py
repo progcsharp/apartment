@@ -9,6 +9,15 @@ from schemas.region import RegionResponseList, RegionResponse, RegionCreate, Reg
 router = APIRouter(prefix="/region", responses={404: {"description": "Not found"}})
 
 
+# @router.get("/test")
+# async def get_all(db=Depends(get_db)):
+#     regions = await count_objects_in_region(db)
+#     print(regions)
+#     for region in regions:
+#         print(region[0].name, region[1])
+#     return "regions"
+
+
 @router.get("/all/", response_model=RegionResponseList)
 async def get_all(db=Depends(get_db)):
     regions = await get_all_region(db)

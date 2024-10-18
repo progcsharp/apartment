@@ -9,19 +9,23 @@ class Photo(BaseModel):
 
 
 class Region(BaseModel):
+    id: int
     name: str
 
 
 class City(BaseModel):
+    id: int
     name: str
     region: Region
 
 
 class Apartment(BaseModel):
+    id: int
     name: str
 
 
 class Convenience(BaseModel):
+    id: int
     name:str
     photo: str
 
@@ -39,11 +43,13 @@ class ObjectBase(BaseModel):
     price: int
     area: str
     room_count: int
-    bed_count: str
+    child_places: int = 0
+    adult_places: int = 0
     floor: str
     min_ded: int
     prepayment_percentage: int
     address: str
+    active: bool = False
     #
     # author = relationship("User", back_populates="objects")
     # city = relationship("City", backref="objects")
@@ -72,4 +78,8 @@ class ObjectCreate(ObjectBase):
         if isinstance(value, str):
             return cls(**json.loads(value))
         return value
+
+
+class ObjectActivate(BaseModel):
+    id: int
 

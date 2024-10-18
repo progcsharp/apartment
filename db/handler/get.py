@@ -1,21 +1,23 @@
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select, desc, func
+from sqlalchemy.orm import selectinload, aliased
 
 from db import make_session, User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, \
-    Reservation
+    Reservation, Tariff
 from schemas.user import UserResponse
 from service.security import manager
 
 
 async def get_user_by_id(id, session):
     async with session() as session:
-        user = await session.get(User, id)
+        query = select(User).where(User.id == id).options(selectinload(User.tariff))
+        result = await session.execute(query)
+        user = result.scalar_one_or_none()
     return user
 
 
 async def get_all_users(session):
     async with session() as session:
-        query = select(User)
+        query = select(User).options(selectinload(User.tariff))
         result = await session.execute(query)
         users = result.scalars().all()
         return users
@@ -118,11 +120,30 @@ async def get_by_id_object(id, session):
     return object
 
 
+async def get_object_by_user_id(user_id, session):
+    async with session() as session:
+        query = select(Object).where(Object.author_id == user_id).options(selectinload(Object.city).subqueryload(City.region)).\
+            options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
+            options(selectinload(Object.conveniences))
+        result = await session.execute(query)
+        objects = result.scalars().all()
+    return objects
+
+
 async def get_all_client(session):
     async with session() as session:
         query = select(Client)
         result = await session.execute(query)
         client = result.scalars().all()
+
+    return client
+
+
+async def get_client_by_phone(phone_client, session):
+    async with session() as session:
+        query = select(Client).where(Client.phone == phone_client)
+        result = await session.execute(query)
+        client = result.scalar_one_or_none()
 
     return client
 
@@ -136,9 +157,30 @@ async def get_client_by_id(user_id, session):
     return client
 
 
+async def get_reservation_all(session):
+    async with session() as session:
+        query = select(Reservation).\
+            options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
+        result = await session.execute(query)
+        reservation = result.scalars().all()
+
+    return reservation
+
+
 async def get_reservation_by_object_id(object_id, session):
     async with session() as session:
-        query = select(Reservation).join(Object).filter(Object.id == object_id)
+        query = select(Reservation).where(Reservation.object_id == object_id).\
+            options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
+        result = await session.execute(query)
+        reservation = result.scalars().all()
+
+    return reservation
+
+
+async def get_reservation_by_client_id(client_id, session):
+    async with session() as session:
+        query = select(Reservation).where(Reservation.client_id == client_id).\
+            options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
         result = await session.execute(query)
         reservation = result.scalars().all()
 
@@ -147,8 +189,86 @@ async def get_reservation_by_object_id(object_id, session):
 
 async def get_reservation_by_user_id(user_id, session):
     async with session() as session:
-        query = select(Reservation).join(Object).filter(Object.author_id == user_id)
+        query = select(Reservation).join(Object).filter(Object.author_id == user_id).\
+            options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
         result = await session.execute(query)
         reservation = result.scalars().all()
 
     return reservation
+
+
+async def get_reservation_by_id(id, session):
+    async with session() as session:
+        query = select(Reservation).where(Reservation.id == id).options(selectinload(Reservation.client)).\
+            options(selectinload(Reservation.object))
+        result = await session.execute(query)
+        reservation = result.scalar_one_or_none()
+
+    return reservation
+
+
+async def get_tariff_by_id(id, session):
+    async with session() as session:
+        query = select(Tariff).where(Tariff.id==id)
+        result = await session.execute(query)
+        tariff = result.scalar_one_or_none()
+
+    return tariff
+
+
+async def get_all_tariff(session):
+    async with session() as session:
+        query = select(Tariff).order_by(Tariff.daily_price)
+        result = await session.execute(query)
+        tariffs = result.scalars().all()
+
+    return tariffs
+
+
+# async def count_objects_in_region(session):
+#     async with session() as session:
+#         # stmt = select(func.count(Object.id)).join(City).group_by(Region.name)
+# #         stmt = """SELECT r.name AS region_name, COUNT(o.id) AS object_count
+# # FROM region r
+# # LEFT JOIN city c ON r.id = c.region_id
+# # LEFT JOIN object o ON c.id = o.city_id
+# # GROUP BY r.id, r.name
+# # ORDER BY object_count DESC;"""
+#
+#         # stmt = (
+#         #     select(
+#         #         Region.name.label('region_name'),
+#         #         func.count(Object.id).label('object_count')
+#         #     )
+#         #     .outerjoin(City)
+#         #     .outerjoin(Object)
+#         #     .group_by(Region.id, Region.name)
+#         #     .order_by(func.count(Object.id).desc())
+#         # )
+#         # stmt = select(Region.name, func.count(Object.id).label("count")).join(City).filter(City.region_id == Region.id).join(Object).filter(Object.city_id == City.id).group_by(Region.id, Region.name)
+#         RegionAlias = aliased(Region)
+#
+#         stmt = (
+#             select(
+#                 RegionAlias,
+#                 func.count(Object.id).label('object_count')
+#             )
+#             .select_from(RegionAlias)
+#             .outerjoin(City)
+#             .outerjoin(Object)
+#             .group_by(RegionAlias.id, RegionAlias.name)
+#             .order_by(func.count(Object.id).desc())
+#         )
+#
+#         # stmt2 = select(func.count(Object.id)).where(Object.city_id)
+#
+#         # stmt = select(func.count(Object.id)).where(Object.city_id == 24)
+#         # result = await session.execute(stmt)
+#         # regions = result.unique().all()
+#
+#         # region_data = {}
+#         # for row in regions:
+#         #     region_name, count = row
+#         #     region_data[region_name] = count
+#
+#     return regions

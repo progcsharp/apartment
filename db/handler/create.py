@@ -4,7 +4,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, Reservation
+from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, Reservation, \
+    Tariff
 from service.file import save_file, save_file_list
 from service.security import hash_password
 
@@ -12,7 +13,7 @@ from service.security import hash_password
 async def create_user(user_data, session):
     password = await hash_password(user_data.password)
     user = User(fullname=user_data.fullname, mail=user_data.mail, phone=user_data.phone, password=password,
-                tarif=user_data.tarif, date_before=user_data.date_before)
+                date_before=user_data.date_before)
     async with session() as session:
         session.add(user)
         await session.commit()
@@ -63,9 +64,9 @@ async def create_convenience(convenience_data, file, session):
 
 async def create_object(object_data, files, user_id, session):
     # file_list = await save_file_list(files)
-    object = Object(name=object_data.name, author_id=1, city_id=object_data.city_id,
+    object = Object(name=object_data.name, author_id=user_id, city_id=object_data.city_id,
                     apartment_id=object_data.apartment_id, description=object_data.description, price=object_data.price,
-                    area=object_data.area, room_count=object_data.room_count, bed_count=object_data.bed_count,
+                    area=object_data.area, room_count=object_data.room_count, adult_places=object_data.adult_places, child_places=object_data.child_places,
                     floor=object_data.floor, min_ded=object_data.min_ded,
                     prepayment_percentage=object_data.prepayment_percentage, photos=["file_list"],
                     address=object_data.address)
@@ -93,6 +94,14 @@ async def create_client(client_data, user_id, session):
                     phone=client_data.phone, email=client_data.email)
 
     async with session() as session:
+
+        query = select(User).where(User.id == user_id)
+        result = await session.execute(query)
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise
+
         session.add(client)
         await session.commit()
 
@@ -139,3 +148,17 @@ async def check_available_time(session: AsyncSession, object_id: int, start_date
                 return False
 
     return True
+
+
+async def create_tariff(tariff_data, session):
+    new_tariff = Tariff(name=tariff_data.name, daily_price=tariff_data.daily_price,
+                        object_count=tariff_data.object_count, description=tariff_data.description,
+                        icon=tariff_data.icon)
+
+    async with session() as session:
+        session.add(new_tariff)
+        await session.commit()
+
+    return new_tariff
+
+

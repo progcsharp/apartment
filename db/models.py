@@ -27,12 +27,26 @@ class User(Base):
     is_active = Column(Boolean, default=False)
     is_verified = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
-    tarif = Column(String(20), nullable=False, default="standart")
+    tariff_id = Column(Integer, ForeignKey('tariff.id'), nullable=False)
     balance = Column(Integer, default=0)
     date_before = Column(Date)
 
     clients = relationship("Client", secondary="client_user", back_populates="user")
     objects = relationship("Object", back_populates="author")
+    tariff = relationship("Tariff", back_populates="users")
+
+
+class Tariff(Base):
+    __tablename__ = 'tariff'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    daily_price = Column(Integer, nullable=False)
+    object_count = Column(Integer, nullable=False)
+    description = Column(Text)
+    icon = Column(Text)
+
+    users = relationship("User", back_populates="tariff")
 
 
 class Region(Base):
@@ -83,7 +97,8 @@ class Object(Base):
     price = Column(Integer)
     area = Column(String)
     room_count = Column(Integer)
-    bed_count = Column(Text)
+    adult_places = Column(Integer)
+    child_places = Column(Integer)
     floor = Column(Text)
     min_ded = Column(Integer)
     prepayment_percentage = Column(Integer)
@@ -99,7 +114,6 @@ class Object(Base):
     conveniences = relationship("Convenience", secondary="object_convenience", back_populates="objects")
 
     reservations = relationship("Reservation", back_populates="object")
-
 
 
 class ObjectConvenience(Base):

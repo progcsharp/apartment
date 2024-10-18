@@ -139,3 +139,10 @@ CREATE TABLE "client_user" (
     user_id INTEGER REFERENCES "user"(id),
     PRIMARY KEY (client_id, user_id)
 );
+
+ALTER TABLE object DROP COLUMN bed_count;
+
+
+ALTER TABLE "object"
+ADD "adult_places" INT,
+    "child_places" INT;
