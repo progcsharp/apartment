@@ -129,7 +129,7 @@ CREATE TABLE reservation (
     client_id INTEGER REFERENCES client(id),
     start_date DATE,
     end_date DATE,
-    status VARCHAR(20) CHECK (status IN ('new', 'approved', 'rejected')),
+    status VARCHAR(20) CHECK (status IN ('new', 'approved', 'rejected', 'completed')),
     description TEXT
 );
 
