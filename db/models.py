@@ -80,7 +80,7 @@ class Convenience(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(Text, nullable=False)
-    photo = Column(String)
+    icon = Column(String)
 
     objects = relationship("Object", secondary="object_convenience", back_populates="conveniences")
 

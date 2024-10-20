@@ -22,12 +22,9 @@ from service.security import verify_password, manager
 router = APIRouter(prefix="/auth", responses={404: {"description": "Not found"}})
 
 
-@router.get('')
-async def get_test(response: Response, cache: InMemoryCacheBackend = Depends(redis_cache), db = Depends(get_db)):
-    user = await get_user("q",db)
-    print(user)
-
-    return {"users": user}
+# @router.get('')
+# async def get_test(response: Response, cache: InMemoryCacheBackend = Depends(redis_cache), db = Depends(get_db)):
+#     raise NotFoundedError
 
 
 @router.post('/register', response_model=UserResponse)

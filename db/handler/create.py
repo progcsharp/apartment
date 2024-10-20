@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, Reservation, \
     Tariff
+from exception.database import NotFoundedError
 from service.file import save_file, save_file_list
 from service.security import hash_password
 
@@ -50,10 +51,9 @@ async def create_apartment(apartment_data, session):
     return apartment
 
 
-async def create_convenience(convenience_data, file, session):
-    # url = await save_file(file)
+async def create_convenience(convenience_data, session):
 
-    convenience = Convenience(name=convenience_data.name, photo="url")
+    convenience = Convenience(name=convenience_data.name, icon=convenience_data.icon)
 
     async with session() as session:
         session.add(convenience)
@@ -100,7 +100,7 @@ async def create_client(client_data, user_id, session):
         user = result.scalar_one_or_none()
 
         if not user:
-            raise
+            raise NotFoundedError
 
         session.add(client)
         await session.commit()

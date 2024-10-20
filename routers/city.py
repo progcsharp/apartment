@@ -27,11 +27,7 @@ async def create(city_data: CityCreate, db=Depends(get_db)):
     return city
 
 
-@router.delete("/delete")
-async def delete(id:int, db=Depends(get_db)):
-    await delete_city(id, db)
+@router.delete("/delete/{city_id}")
+async def delete(city_id:int, db=Depends(get_db)):
+    await delete_city(city_id, db)
     return "successful"
-
-
-
-

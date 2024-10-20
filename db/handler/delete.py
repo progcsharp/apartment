@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Reservation
+from exception.database import NotFoundedError, DependencyConflictError
 
 
 async def delete_user(id, session):
@@ -10,6 +11,9 @@ async def delete_user(id, session):
                                                           options(selectinload(Object.reservations)))
         result = await session.execute(query)
         user = result.scalar_one_or_none()
+
+        if not user:
+            raise NotFoundedError
 
         for object in user.objects:
             for reservation in object.reservations:
@@ -27,9 +31,13 @@ async def delete_region(id, session):
         result = await session.execute(query)
         cities = result.scalars().all()
         if cities:
-            raise
+            raise DependencyConflictError
 
         region = await session.get(Region, id)
+
+        if not region:
+            raise NotFoundedError
+
         await session.delete(region)
         await session.commit()
     return "successful"
@@ -41,9 +49,13 @@ async def delete_city(id, session):
         result = await session.execute(query)
         objects = result.scalars().all()
         if objects:
-            raise
+            raise DependencyConflictError
 
         city = await session.get(City, id)
+
+        if not city:
+            raise NotFoundedError
+
         await session.delete(city)
         await session.commit()
     return "successful"
@@ -56,9 +68,13 @@ async def delete_apartment(id, session):
         objects = result.scalars().all()
 
         if objects:
-            raise
+            raise DependencyConflictError
 
         apartment = await session.get(Apartment, id)
+
+        if not apartment:
+            raise NotFoundedError
+
         await session.delete(apartment)
         await session.commit()
     return "successful"
@@ -71,9 +87,13 @@ async def delete_convenience(id, session):
         objects = result.scalars().all()
 
         if objects:
-            raise
+            raise DependencyConflictError
 
         convenience = await session.get(Convenience, id)
+
+        if not convenience:
+            raise NotFoundedError
+
         await session.delete(convenience)
         await session.commit()
 
@@ -87,7 +107,7 @@ async def delete_object(id, session):
         reservation = result.scalars().all()
 
         if reservation:
-            raise
+            raise DependencyConflictError
 
         query = select(ObjectConvenience).where(ObjectConvenience.object_id == id)
         result = await session.execute(query)
@@ -98,6 +118,10 @@ async def delete_object(id, session):
             await session.commit()
 
         object = await session.get(Object, id)
+
+        if not object:
+            raise NotFoundedError
+
         await session.delete(object)
         await session.commit()
 
@@ -107,6 +131,9 @@ async def delete_object(id, session):
 async def delete_reservation(reservation_id, session):
     async with session() as session:
         reservation = await session.get(Reservation, reservation_id)
+
+        if not reservation:
+            raise NotFoundedError
 
         await session.delete(reservation)
         await session.commit()

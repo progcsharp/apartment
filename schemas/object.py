@@ -27,7 +27,7 @@ class Apartment(BaseModel):
 class Convenience(BaseModel):
     id: int
     name:str
-    photo: str
+    icon: str
 
 
 class Author(BaseModel):

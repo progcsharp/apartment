@@ -11,7 +11,7 @@ class ConvenienceBase(BaseModel):
 
 class ConvenienceResponse(ConvenienceBase):
     id: int
-    photo: str
+    icon: str
 
 
 class ConvenienceResponseList(BaseModel):
@@ -19,7 +19,7 @@ class ConvenienceResponseList(BaseModel):
 
 
 class ConvenienceCreate(ConvenienceBase):
-    pass
+    icon: str
 
 
     @model_validator(mode='before')

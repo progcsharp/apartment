@@ -27,10 +27,8 @@ async def create(apartment_data: ApartmentCreate, db=Depends(get_db)):
     return apartment
 
 
-@router.delete("/delete")
-async def delete(id:int, db=Depends(get_db)):
-    await delete_apartment(id, db)
+@router.delete("/delete/{apartment_id}")
+async def delete(apartment_id: int, db=Depends(get_db)):
+    await delete_apartment(apartment_id, db)
     return "successful"
-
-
 

@@ -3,6 +3,7 @@ from sqlalchemy.orm import selectinload, aliased
 
 from db import make_session, User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, \
     Reservation, Tariff
+from exception.database import NotFoundedError
 from schemas.user import UserResponse
 from service.security import manager
 
@@ -12,6 +13,10 @@ async def get_user_by_id(id, session):
         query = select(User).where(User.id == id).options(selectinload(User.tariff))
         result = await session.execute(query)
         user = result.scalar_one_or_none()
+
+        if not user:
+            raise NotFoundedError
+
     return user
 
 
@@ -29,9 +34,9 @@ async def get_user(mail, session):
         result = await session.execute(query)
         user = result.scalar_one_or_none()
 
-        if user is None:
+        if not user:
             print(f"Пользователь с email {mail} не найден.")
-            return None
+            raise NotFoundedError
 
         return user
 
@@ -49,6 +54,10 @@ async def get_region_by_id(id, session):
         query = select(Region).where(Region.id == id).options(selectinload(Region.cities))
         result = await session.execute(query)
         region = result.scalar_one_or_none()
+
+        if not region:
+            raise NotFoundedError
+
     return region
 
 
@@ -65,6 +74,10 @@ async def get_city_by_id(id:int, session):
         query = select(City).where(City.id == id).options(selectinload(City.region))
         result = await session.execute(query)
         city = result.scalar_one_or_none()
+
+        if not city:
+            raise NotFoundedError
+
     return city
 
 
@@ -82,6 +95,10 @@ async def get_apartment_by_id(id: int, session):
         result = await session.execute(query)
         apartment = result.scalar_one_or_none()
         # apartment = await session.get(Apartment, id)
+
+        if not apartment:
+            raise NotFoundedError
+
     return apartment
 
 
@@ -93,9 +110,15 @@ async def get_all_convenience(session):
         return convenience
 
 
-async def get_convenience_by_id(id, session):
+async def get_convenience_by_id(convenience_id, session):
     async with session() as session:
-        convenience = await session.get(Convenience, id)
+        query = select(Convenience).where(Convenience.id == convenience_id)
+        result = await session.execute(query)
+        convenience = result.scalar_one_or_none()
+
+        if not convenience:
+            raise NotFoundedError
+
     return convenience
 
 
@@ -117,6 +140,10 @@ async def get_by_id_object(id, session):
             options(selectinload(Object.conveniences))
         result = await session.execute(query)
         object = result.scalar_one_or_none()
+
+        if not object:
+            raise NotFoundedError
+
     return object
 
 
@@ -144,6 +171,9 @@ async def get_client_by_phone(phone_client, session):
         query = select(Client).where(Client.phone == phone_client)
         result = await session.execute(query)
         client = result.scalar_one_or_none()
+
+        if not client:
+            raise NotFoundedError
 
     return client
 
@@ -204,6 +234,9 @@ async def get_reservation_by_id(id, session):
         result = await session.execute(query)
         reservation = result.scalar_one_or_none()
 
+        if not reservation:
+            raise NotFoundedError
+
     return reservation
 
 
@@ -212,6 +245,9 @@ async def get_tariff_by_id(id, session):
         query = select(Tariff).where(Tariff.id==id)
         result = await session.execute(query)
         tariff = result.scalar_one_or_none()
+
+        if not tariff:
+            raise NotFoundedError
 
     return tariff
 

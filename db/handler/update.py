@@ -4,6 +4,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
 from db import User, Tariff, Object, Reservation, City
+from exception.database import NotFoundedError
 from service.security import hash_password
 
 
@@ -12,6 +13,10 @@ async def update_user_verified(mail, session):
         query = select(User).where(User.mail == mail)
         result = await session.execute(query)
         user = result.scalar_one_or_none()
+
+        if not user:
+            raise NotFoundedError
+
         user.is_verified = True
         # session.add(user)
         await session.commit()
@@ -23,6 +28,10 @@ async def update_user_activate(user_data,  session):
         query = select(User).where(User.id == user_data.id).options(selectinload(User.tariff))
         result = await session.execute(query)
         user = result.scalar_one_or_none()
+
+        if not user:
+            raise NotFoundedError
+
         user.is_active = not user.is_active
         # session.add(user)
         await session.commit()
@@ -36,6 +45,10 @@ async def update_object_activate(object_data,  session):
             options(selectinload(Object.conveniences))
         result = await session.execute(query)
         object = result.scalar_one_or_none()
+
+        if not object:
+            raise NotFoundedError
+
         object.active = not object.active
         # session.add(object)
         await session.commit()
@@ -48,6 +61,10 @@ async def update_reservation_status(reservation_data, session):
             options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
         result = await session.execute(query)
         reservation = result.scalar_one_or_none()
+
+        if not reservation:
+            raise NotFoundedError
+
         reservation.status = reservation_data.status
         # session.add(reservation)
         await session.commit()
@@ -60,6 +77,10 @@ async def update_reservation(reservation_data, session):
             options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
         result = await session.execute(query)
         reservation = result.scalar_one_or_none()
+
+        if not reservation:
+            raise NotFoundedError
+
         stmt = (
             update(Reservation)
             .where(Reservation.id == reservation_data.id)
@@ -74,16 +95,20 @@ async def update_reservation(reservation_data, session):
 
 async def update_user_tariff_activate(user_data, session):
     async with session() as session:
-        query = select(User).where(User.id == user_data.user_id)
-        result = await session.execute(query)
-        user = result.scalar_one_or_none()
-        user.is_active = True
-        user.balance += user_data.balance
-        user.tariff_id = user_data.tariff_id
-
         query = select(Tariff).where(Tariff.id == user_data.tariff_id)
         result = await session.execute(query)
         tariff = result.scalar_one_or_none()
+
+        query = select(User).where(User.id == user_data.user_id)
+        result = await session.execute(query)
+        user = result.scalar_one_or_none()
+
+        if not user and not tariff:
+            raise NotFoundedError
+
+        user.is_active = True
+        user.balance += user_data.balance
+        user.tariff_id = user_data.tariff_id
 
         end_tariff_data = await calculate_end_date(user.balance, tariff.daily_price)
         user.date_before = end_tariff_data
@@ -102,8 +127,30 @@ async def update_user_password(user_data, user_id, session):
         result = await session.execute(query)
         user = result.scalar_one_or_none()
 
+        if not user:
+            raise NotFoundedError
+
         user.password = password
 
+        await session.commit()
+
+
+async def update_user(user_data, session):
+    async with session() as session:
+        query = select(User).where(User.id == user_id)
+        result = await session.execute(query)
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise NotFoundedError
+
+        stmt = (
+            update(User)
+            .where(User.id == user_data.id)
+            .values(**dict(user_data))
+        )
+
+        await session.execute(stmt)
         await session.commit()
 
 
@@ -122,6 +169,9 @@ async def update_tariff(tariff_data, session):
         query = select(Tariff).where(Tariff.id == tariff_data.id)
         result = await session.execute(query)
         tariff = result.scalar_one_or_none()
+
+        if not tariff:
+            raise NotFoundedError
 
         stmt = (
             update(Tariff)

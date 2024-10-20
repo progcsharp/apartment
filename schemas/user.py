@@ -60,3 +60,15 @@ class UserResetPassword(BaseModel):
 
 class UserActivate(BaseModel):
     id: int
+
+
+class UserUpdateAdmin(BaseModel):
+    id: int
+    fullname: str
+    phone: str
+    mail: str
+
+
+class UserUpdate(BaseModel):
+    fullname: str
+    phone: str

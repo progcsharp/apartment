@@ -67,7 +67,7 @@ CREATE TABLE "apartment" (
 CREATE TABLE "convenience" (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    photo TEXT
+    icon TEXT
 );
 
 CREATE TABLE "object" (

@@ -24,16 +24,11 @@ async def get(id: int, db=Depends(get_db)):
 
 
 @router.post("/create", response_model=ConvenienceResponse)
-async def create(convenience_name: ConvenienceCreate = Body(...), file: Optional[UploadFile]=File(...), db=Depends(get_db)):
-    print(file.filename)
-    convenience = await create_convenience(convenience_name, file,db)
+async def create(convenience_name: ConvenienceCreate, db=Depends(get_db)):
+    convenience = await create_convenience(convenience_name, db)
     return convenience
 
 
-@router.delete("/delete")
-async def delete(id: int, db=Depends(get_db)):
-    await delete_convenience(id, db)
-    return "successful"
-
-
-
+@router.delete("/delete/{convenience_id}")
+async def delete(convenience_id: int, db=Depends(get_db)):
+    await delete_convenience(convenience_id, db)
