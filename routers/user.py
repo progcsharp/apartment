@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, Body
 
 from db.engine import get_db
@@ -21,10 +23,10 @@ async def get(id: int, db=Depends(get_db)):
     return user
 
 
-@router.get("/all/", response_model=UserResponseList)
+@router.get("/all/", response_model=List[UserResponse])
 async def get_all(db=Depends(get_db)):
     user = await get_all_users(db)
-    return {"users":user}
+    return user
 
 
 @router.get("/profile", response_model=UserResponse)

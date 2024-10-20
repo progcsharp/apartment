@@ -27,7 +27,7 @@ class User(Base):
     is_active = Column(Boolean, default=False)
     is_verified = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
-    tariff_id = Column(Integer, ForeignKey('tariff.id'), nullable=False)
+    tariff_id = Column(Integer, ForeignKey('tariff.id'), nullable=True)
     balance = Column(Integer, default=0)
     date_before = Column(Date)
 

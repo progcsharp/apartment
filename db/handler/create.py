@@ -16,6 +16,7 @@ async def create_user(user_data, session):
     user = User(fullname=user_data.fullname, mail=user_data.mail, phone=user_data.phone, password=password,
                 date_before=user_data.date_before)
     async with session() as session:
+        user.tariff = None
         session.add(user)
         await session.commit()
 
