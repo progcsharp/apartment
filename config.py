@@ -6,14 +6,14 @@ settings = configparser.ConfigParser()
 settings.read('settings.ini')
 
 mail_conf = ConnectionConfig(
-    MAIL_USERNAME = "username",
-    MAIL_PASSWORD = "**********",
-    MAIL_FROM = "test@email.com",
-    MAIL_PORT = 587,
-    MAIL_SERVER = "mail server",
+    MAIL_USERNAME = "fonror@mail.ru",
+    MAIL_PASSWORD = "964dCGrEXvP3BcnwaBkV",
+    MAIL_FROM = "fonror@mail.ru",
+    MAIL_PORT = 465,
+    MAIL_SERVER = "smtp.mail.ru",
     MAIL_FROM_NAME="Desired Name",
-    MAIL_STARTTLS = True,
-    MAIL_SSL_TLS = False,
+    MAIL_STARTTLS = False,
+    MAIL_SSL_TLS = True,
     USE_CREDENTIALS = True,
     VALIDATE_CERTS = True
 )

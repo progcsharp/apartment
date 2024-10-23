@@ -20,6 +20,7 @@ from routers.object import router as object_router
 from routers.client import router as client_router
 from routers.reservation import router as reservation_router
 from routers.tariff import router as tariff_router
+from routers.admin import router as admin_router
 
 app = FastAPI()
 
@@ -44,6 +45,7 @@ app.include_router(router=convenience_router)
 app.include_router(router=object_router)
 app.include_router(router=client_router)
 app.include_router(router=reservation_router)
+app.include_router(router=admin_router)
 
 
 @manager.user_loader()

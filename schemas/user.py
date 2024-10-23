@@ -28,7 +28,7 @@ class UserRegister(UserBase):
     date_before: date = date.today()
 
 
-class UserActivate(UserBase):
+class UserActivateCode(UserBase):
     code: str
 
 
@@ -55,6 +55,7 @@ class UserTariffActivate(BaseModel):
 
 
 class UserResetPassword(BaseModel):
+    id: int
     new_password: str
 
 

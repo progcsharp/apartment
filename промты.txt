@@ -40,11 +40,12 @@ CREATE TABLE "user" (
     fullname TEXT NOT NULL,
     phone TEXT NOT NULL,
     mail TEXT NOT NULL,
-    password TEXT NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
+    password VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT FALSE,
     is_verified BOOLEAN DEFAULT FALSE,
-    tarif VARCHAR(20) CHECK (tarif IN ('standart', 'business', 'premium')) NOT NULL,
-    balance INT DEFAULT 0,
+    is_admin BOOLEAN DEFAULT FALSE,
+    tariff_id INTEGER NOT NULL,
+    balance INTEGER DEFAULT 0,
     date_before DATE
 );
 
@@ -114,7 +115,7 @@ CREATE TABLE "object_convenience" (
 );
 
 
-CREATE TABLE clients (
+CREATE TABLE client (
     id SERIAL PRIMARY KEY,
     fullname VARCHAR(255),
     reiting FLOAT,
@@ -145,4 +146,22 @@ ALTER TABLE object DROP COLUMN bed_count;
 
 ALTER TABLE "object"
 ADD "adult_places" INT,
-    "child_places" INT;
+ADD "child_places" INT;
+
+CREATE TABLE tariff (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    daily_price INTEGER NOT NULL,
+    object_count INTEGER NOT NULL,
+    description TEXT,
+    icon TEXT
+);
+
+
+y0_AgAAAABc4z-jAAynRAAAAAEVkYPxAADthVjoxJZO7pQjZcGjTTB9fTBFvg
+
+clientid ff8154651e5747de9074a356d2c354bd
+
+client secret daf46c76c2e547568e5fc78b24a9eeb8
+
+пароль почты 964dCGrEXvP3BcnwaBkV

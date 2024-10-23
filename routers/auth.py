@@ -16,7 +16,7 @@ from db.engine import get_db
 from db.handler.create import create_user
 from db.handler.get import get_user
 from db.handler.update import update_user_verified
-from schemas.user import UserRegister, UserActivate, UserLogin, UserResponse
+from schemas.user import UserRegister, UserActivate, UserLogin, UserResponse, UserActivateCode
 from service.security import verify_password, manager
 
 router = APIRouter(prefix="/auth", responses={404: {"description": "Not found"}})
@@ -32,15 +32,15 @@ async def register(response: Response, user: UserRegister, cache: InMemoryCacheB
     try:
         user_res = await create_user(user, db)
         code = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
-        # message = MessageSchema(
-        #     subject="Fastapi-Mail module",
-        #     recipients=[user_res.mail],
-        #     body=code,
-        #     subtype=MessageType.html)
+        message = MessageSchema(
+            subject="Fastapi-Mail module",
+            recipients=[user_res.mail],
+            body=f'<p>{code}</p>',
+            subtype=MessageType.html)
         await cache.set(user_res.mail, code)
         await cache.expire(user_res.mail, 3600)
-        # fm = FastMail(mail_conf)
-        # await fm.send_message(message)
+        fm = FastMail(mail_conf)
+        await fm.send_message(message)
     except Exception as e:
         raise
 
@@ -48,7 +48,7 @@ async def register(response: Response, user: UserRegister, cache: InMemoryCacheB
 
 
 @router.post('/activate', response_model=UserResponse)
-async def activate(response: Response, user: UserActivate, cache: InMemoryCacheBackend = Depends(redis_cache), db = Depends(get_db)):
+async def activate(response: Response, user: UserActivateCode, cache: InMemoryCacheBackend = Depends(redis_cache), db = Depends(get_db)):
     code = await cache.get(user.mail)
     if code:
         if code == user.code:
@@ -74,13 +74,21 @@ async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend
         raise
     code = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
     print(f"{code}_login")
+    message = MessageSchema(
+        subject="Fastapi-Mail module",
+        recipients=[user.mail],
+        body=f'<p>{code}</p>',
+        subtype=MessageType.html)
+
     await cache.set(f'{user.mail}_login', code)
     await cache.expire(f'{user.mail}_login', 3600)
+    fm = FastMail(mail_conf)
+    await fm.send_message(message)
     return user
 
 
-@router.post("/login/auth")
-async def login_auth(response: Response, user: UserActivate, cache: InMemoryCacheBackend = Depends(redis_cache), db = Depends(get_db)):
+@router.post("/login/auth", response_model=UserResponse)
+async def login_auth(response: Response, user: UserActivateCode, cache: InMemoryCacheBackend = Depends(redis_cache), db = Depends(get_db)):
     user_res = await get_user(user.mail, db)
     if not user_res:
         return JSONResponse(status_code=200, content={"user": "not found"})
@@ -94,4 +102,9 @@ async def login_auth(response: Response, user: UserActivate, cache: InMemoryCach
     manager.set_cookie(response, token)
     return user_res
 
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(key='k2bjfb2hif2bl3ihfb32if2ifh32')
+    return response
 

@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Reservation
+from exception.auth import Forbidden
 from exception.database import NotFoundedError, DependencyConflictError
 
 
@@ -100,16 +101,26 @@ async def delete_convenience(id, session):
     return "successful"
 
 
-async def delete_object(id, session):
+async def delete_object(object_id, user, session):
     async with session() as session:
-        query = select(Reservation).where(Reservation.object_id == id)
+        query = select(Object).where(Object.id == object_id)
+        result = await session.execute(query)
+        object = result.scalar_one_or_none()
+
+        if not object:
+            raise NotFoundedError
+
+        if not (user.is_admin or object.author_id == user.id):
+            raise Forbidden
+
+        query = select(Reservation).where(Reservation.object_id == object_id)
         result = await session.execute(query)
         reservation = result.scalars().all()
 
         if reservation:
             raise DependencyConflictError
 
-        query = select(ObjectConvenience).where(ObjectConvenience.object_id == id)
+        query = select(ObjectConvenience).where(ObjectConvenience.object_id == object_id)
         result = await session.execute(query)
         objects_convenience = result.scalars().all()
 
@@ -117,20 +128,17 @@ async def delete_object(id, session):
             await session.delete(convenience)
             await session.commit()
 
-        object = await session.get(Object, id)
-
-        if not object:
-            raise NotFoundedError
-
         await session.delete(object)
         await session.commit()
 
     return "successful"
 
 
-async def delete_reservation(reservation_id, session):
+async def delete_reservation(user_id, reservation_id, session):
     async with session() as session:
-        reservation = await session.get(Reservation, reservation_id)
+        query = select(Reservation).where(Reservation.id == reservation_id).join(Object).filter(Object.author_id == user_id)
+        result = await session.execute(query)
+        reservation = result.scalar_one_or_none()
 
         if not reservation:
             raise NotFoundedError

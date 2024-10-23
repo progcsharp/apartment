@@ -67,6 +67,31 @@ class ObjectResponse(ObjectBase):
     conveniences: List[Convenience]
 
 
+class ObjectUpdate(ObjectBase):
+    id: int
+    city_id: int
+    apartment_id: int
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_to_json(cls, value):
+        if isinstance(value, str):
+            return cls(**json.loads(value))
+        return value
+
+
+class ObjectUpdatePhotosConvenience(BaseModel):
+    removed_photos: List[str]
+    convenience: List[int]
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_to_json(cls, value):
+        if isinstance(value, str):
+            return cls(**json.loads(value))
+        return value
+
+
 class ObjectCreate(ObjectBase):
     city_id: int
     apartment_id: int

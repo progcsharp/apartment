@@ -30,7 +30,7 @@ async def get_all_users(session):
 
 async def get_user(mail, session):
     async with session() as session:
-        query = select(User).where(User.mail == mail).options(selectinload(User.objects))
+        query = select(User).where(User.mail == mail).options(selectinload(User.objects)).options(selectinload(User.tariff))
         result = await session.execute(query)
         user = result.scalar_one_or_none()
 
@@ -147,9 +147,23 @@ async def get_by_id_object(id, session):
     return object
 
 
-async def get_object_by_user_id(user_id, session):
+async def get_by_id_object_by_user(object_id, user_id, session):
     async with session() as session:
-        query = select(Object).where(Object.author_id == user_id).options(selectinload(Object.city).subqueryload(City.region)).\
+        query = select(Object).where(Object.id == object_id).where(Object.author_id == user_id).options(selectinload(Object.city).subqueryload(City.region)).\
+            options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
+            options(selectinload(Object.conveniences))
+        result = await session.execute(query)
+        object = result.scalar_one_or_none()
+
+        if not object:
+            raise NotFoundedError
+
+    return object
+
+
+async def get_object_by_user_id( session):
+    async with session() as session:
+        query = select(Object).options(selectinload(Object.city).subqueryload(City.region)).\
             options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
             options(selectinload(Object.conveniences))
         result = await session.execute(query)
@@ -187,9 +201,9 @@ async def get_client_by_id(user_id, session):
     return client
 
 
-async def get_reservation_all(session):
+async def get_reservation_all(user_id, session):
     async with session() as session:
-        query = select(Reservation).\
+        query = select(Reservation).join(Object).filter(Object.author_id == user_id).\
             options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
         result = await session.execute(query)
         reservation = result.scalars().all()
@@ -197,9 +211,9 @@ async def get_reservation_all(session):
     return reservation
 
 
-async def get_reservation_by_object_id(object_id, session):
+async def get_reservation_all_by_admin(session):
     async with session() as session:
-        query = select(Reservation).where(Reservation.object_id == object_id).\
+        query = select(Reservation).join(Object).\
             options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
         result = await session.execute(query)
         reservation = result.scalars().all()
@@ -207,10 +221,33 @@ async def get_reservation_by_object_id(object_id, session):
     return reservation
 
 
-async def get_reservation_by_client_id(client_id, session):
+async def get_reservation_by_object_id(user, object_id, session):
+    async with session() as session:
+        query = select(Reservation).where(Reservation.object_id == object_id)
+        #     options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
+
+        if not user.is_admin:
+            query = query.join(Object).filter(Object.author_id==user.id)
+
+        query = query.options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
+
+        result = await session.execute(query)
+        reservation = result.scalars().all()
+
+    return reservation
+
+
+async def get_reservation_by_client_id(user, client_id, session):
     async with session() as session:
         query = select(Reservation).where(Reservation.client_id == client_id).\
             options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
+
+        if not user.admin:
+            query = query.join(Object).filter(Object.author_id == user.id)
+
+        query = query.\
+            options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
+
         result = await session.execute(query)
         reservation = result.scalars().all()
 
@@ -227,10 +264,16 @@ async def get_reservation_by_user_id(user_id, session):
     return reservation
 
 
-async def get_reservation_by_id(id, session):
+async def get_reservation_by_id(user, reservation_id, session):
     async with session() as session:
-        query = select(Reservation).where(Reservation.id == id).options(selectinload(Reservation.client)).\
+        query = select(Reservation).where(Reservation.id == reservation_id)
+
+        if not user.is_admin:
+            query = query.join(Object).filter(Object.author_id == user)
+
+        query = query.options(selectinload(Reservation.client)).\
             options(selectinload(Reservation.object))
+
         result = await session.execute(query)
         reservation = result.scalar_one_or_none()
 

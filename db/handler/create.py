@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, Reservation, \
     Tariff
 from exception.database import NotFoundedError
-from service.file import save_file, save_file_list
+from service.file import upload_file
 from service.security import hash_password
 
 
@@ -65,11 +65,13 @@ async def create_convenience(convenience_data, session):
 
 async def create_object(object_data, files, user_id, session):
     # file_list = await save_file_list(files)
+    file_list = upload_file(files)
+
     object = Object(name=object_data.name, author_id=user_id, city_id=object_data.city_id,
                     apartment_id=object_data.apartment_id, description=object_data.description, price=object_data.price,
                     area=object_data.area, room_count=object_data.room_count, adult_places=object_data.adult_places, child_places=object_data.child_places,
                     floor=object_data.floor, min_ded=object_data.min_ded,
-                    prepayment_percentage=object_data.prepayment_percentage, photos=["file_list"],
+                    prepayment_percentage=object_data.prepayment_percentage, photos=file_list,
                     address=object_data.address)
 
     async with session() as session:
@@ -117,7 +119,14 @@ async def create_client(client_data, user_id, session):
     return client
 
 
-async def create_reservation(reservation_data, session):
+async def create_reservation(user_id, reservation_data, session):
+    query= select(Object).where(Object.id == reservation_data.object_id).where(Object.author_id == user_id)
+    result = await session.execute(query)
+    object = result.scalar_one_or_none()
+
+    if not object:
+        raise NotFoundedError
+
     reservation = Reservation(object_id=reservation_data.object_id, client_id=reservation_data.client_id,
                               start_date=reservation_data.start_date, end_date=reservation_data.end_date,
                               status=reservation_data.status, description=reservation_data.description)

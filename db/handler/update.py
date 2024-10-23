@@ -3,8 +3,10 @@ from datetime import date, timedelta
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
-from db import User, Tariff, Object, Reservation, City
+from db import User, Tariff, Object, Reservation, City, ObjectConvenience
+from exception.auth import Forbidden
 from exception.database import NotFoundedError
+from service.file import delete_file, upload_file
 from service.security import hash_password
 
 
@@ -20,6 +22,7 @@ async def update_user_verified(mail, session):
         user.is_verified = True
         # session.add(user)
         await session.commit()
+        user.tariff = None
     return user
 
 
@@ -38,7 +41,7 @@ async def update_user_activate(user_data,  session):
     return user
 
 
-async def update_object_activate(object_data,  session):
+async def update_object_activate(object_data, user, session):
     async with session() as session:
         query = select(Object).where(Object.id == object_data.id).options(selectinload(Object.city).subqueryload(City.region)).\
             options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
@@ -49,10 +52,54 @@ async def update_object_activate(object_data,  session):
         if not object:
             raise NotFoundedError
 
+        if not (user.is_admin or object.author_id == user.id):
+            raise Forbidden
+
         object.active = not object.active
         # session.add(object)
         await session.commit()
     return object
+
+
+async def update_object_by_id(object_data, convenience_and_removed_photos, files, session):
+    async with session() as session:
+        query = select(Object).where(Object.id == object_data.id).options(selectinload(Object.city).subqueryload(City.region)).\
+            options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
+            options(selectinload(Object.conveniences))
+        result = await session.execute(query)
+        object = result.scalar_one_or_none()
+
+        if not object:
+            raise NotFoundedError
+
+        delete_file(convenience_and_removed_photos.removed_photos)
+        urls = upload_file(files)
+
+        query = select(ObjectConvenience).where(ObjectConvenience.object_id == object_data.id)
+        result = await session.execute(query)
+        objects_convenience = result.scalars().all()
+
+        for convenience in objects_convenience:
+            if not (convenience.convenience_id in convenience_and_removed_photos.convenience):
+                await session.delete(convenience)
+                # convenience_and_removed_photos.convenience.remove(convenience.convenience_id)
+                continue
+
+
+
+
+        object.photos.extend(urls)
+
+        stmt = (
+            update(Object)
+            .where(Object.id == object_data.id)
+            .values(**dict(object_data))
+        )
+
+        await session.execute(stmt)
+        await session.commit()
+
+        return object
 
 
 async def update_reservation_status(reservation_data, session):
@@ -71,9 +118,10 @@ async def update_reservation_status(reservation_data, session):
     return reservation
 
 
-async def update_reservation(reservation_data, session):
+async def update_reservation(user_id, reservation_data, session):
     async with session() as session:
         query = select(Reservation).where(Reservation.id == reservation_data.id).\
+            join(Object).filter(Object.author_id == user_id).\
             options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
         result = await session.execute(query)
         reservation = result.scalar_one_or_none()
