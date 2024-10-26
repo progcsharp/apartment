@@ -22,7 +22,7 @@ async def get_all(user_auth=Depends(manager), db=Depends(get_db)):
 
 @router.get("/objectid/{object_id}", response_model=List[ReservationResponse])
 async def get_by_object_id(object_id: int, user_auth=Depends(manager), db=Depends(get_db)):
-    reservation = await get_reservation_by_object_id(user_auth.id, object_id, db)
+    reservation = await get_reservation_by_object_id(user_auth, object_id, db)
     return reservation
 
 
@@ -46,14 +46,14 @@ async def get_by_user_id(client_id: int, user_auth=Depends(manager), db=Depends(
 
 
 @router.put("/status")
-async def status_update(reservation_status_data: ReservationUpdateStatus, db=Depends(get_db)):
-    reservation = await update_reservation_status(reservation_status_data, db)
+async def status_update(reservation_status_data: ReservationUpdateStatus, user_auth=Depends(manager), db=Depends(get_db)):
+    reservation = await update_reservation_status(reservation_status_data, user_auth, db)
     return reservation
 
 
 @router.put("/update", response_model=ReservationResponse)
 async def update(reservation_data: ReservationUpdate, user_auth=Depends(manager), db=Depends(get_db)):
-    reservation = await update_reservation(user_auth.id, reservation_data, db)
+    reservation = await update_reservation(user_auth, reservation_data, db)
     return reservation
 
 

@@ -18,23 +18,33 @@ router = APIRouter(prefix="/object", responses={404: {"description": "Not found"
 
 
 # @router.get("/test")
-# async def test():
-#     k = [1, 2, 3, ]
-#     f = [4, 5, 6, 7]
-#     h = f.extend(k)
-#     print(f"Добавленные элементы: {h}")
-#     return "vdsvs"
+# async def test(db=Depends(get_db)):
+#     arr1 = [1, 3]
+#     arr2 = [1, 3, 4]
+#     set1 = set(arr1)
+#
+#     # Создаем множество из arr2
+#     set2 = set(arr2)
+#
+#     # Вычитаем set2 из set1 для получения уникальных элементов arr1
+#     unique_ids = list(set1 - set2)
+#
+#     # Вычитаем set1 из set2 для получения новых идентификаторов
+#     new_ids = list(set2 - set1)
+#
+#     # Объединяем результаты
+#     return unique_ids, new_ids
 
 
 @router.get("/all", response_model=List[ObjectResponse])
-async def get_all(db=Depends(get_db)):
-    objects = await get_object_by_user_id( db)
+async def get_all(db=Depends(get_db), user_auth=Depends(manager)):
+    objects = await get_object_by_user_id(user=user_auth, session=db)
     return objects
 
 
 @router.get("/id/{object_id}", response_model=ObjectResponse)
 async def get(object_id: int, db=Depends(get_db), user_auth=Depends(manager)):
-    objects = await get_by_id_object_by_user(object_id, user_auth.id, db)
+    objects = await get_by_id_object_by_user(object_id, user_auth, db)
     return objects
 
 

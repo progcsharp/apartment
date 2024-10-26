@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from fastapi_login import LoginManager
 from passlib.context import CryptContext
 import passlib.handlers.bcrypt
@@ -10,7 +12,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 manager = LoginManager(config['AUTH']['SECRET'], config['AUTH']['PATH'],
                        use_cookie=True,
                        cookie_name=config['AUTH']['COOKIE_NAME'],
-                       use_header=False
+                       use_header=False,
+                       default_expiry=timedelta(days=1)
                        )
 
 

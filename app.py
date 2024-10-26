@@ -25,11 +25,12 @@ from routers.admin import router as admin_router
 app = FastAPI()
 
 
-origins = ["*"]
+origins = ["http://127.0.0.1:8000", "http://localhost:8000", "http://37.140.198.195:8000"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

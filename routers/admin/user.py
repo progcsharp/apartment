@@ -8,8 +8,8 @@ from db.handler.delete import delete_user
 from db.handler.get import get_user_by_id, get_all_users, get_user
 from db.handler.update import update_user_activate, update_user_tariff_activate, update_user_password, update_user
 from permission.is_admin import check_admin
-from schemas.user import UserResponse, UserResponseList, UserRegister, UserTariffActivate, UserActivate, \
-    UserResetPassword, UserUpdateAdmin, UserUpdate
+from schemas.user import UserResponse, UserTariffActivate, UserActivate, \
+    UserResetPassword, UserUpdateAdmin, UserUpdate, UserCreate
 from service.security import manager
 
 router = APIRouter(prefix="/user", responses={404: {"description": "Not found"}})
@@ -73,7 +73,7 @@ async def update(user_data: UserUpdateAdmin, db=Depends(get_db), user_auth=Depen
 
 #admin
 @router.post("/create", response_model=UserResponse)
-async def create(user_data: UserRegister, db=Depends(get_db), user_auth=Depends(manager)):
+async def create(user_data: UserCreate, db=Depends(get_db), user_auth=Depends(manager)):
     if not await check_admin(user_auth):
         raise
     user = await create_user(user_data, db)

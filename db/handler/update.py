@@ -1,8 +1,10 @@
 from datetime import date, timedelta
 
-from sqlalchemy import select, update
+from fastapi_mail import MessageSchema, MessageType, FastMail
+from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 
+from config import mail_conf
 from db import User, Tariff, Object, Reservation, City, ObjectConvenience
 from exception.auth import Forbidden
 from exception.database import NotFoundedError
@@ -41,7 +43,7 @@ async def update_user_activate(user_data,  session):
     return user
 
 
-async def update_object_activate(object_data, user, session):
+async def  update_object_activate(object_data, user, session):
     async with session() as session:
         query = select(Object).where(Object.id == object_data.id).options(selectinload(Object.city).subqueryload(City.region)).\
             options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
@@ -75,18 +77,22 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
         delete_file(convenience_and_removed_photos.removed_photos)
         urls = upload_file(files)
 
-        query = select(ObjectConvenience).where(ObjectConvenience.object_id == object_data.id)
+        query = select(ObjectConvenience.convenience_id).where(ObjectConvenience.object_id == object_data.id)
         result = await session.execute(query)
         objects_convenience = result.scalars().all()
 
-        for convenience in objects_convenience:
-            if not (convenience.convenience_id in convenience_and_removed_photos.convenience):
-                await session.delete(convenience)
-                # convenience_and_removed_photos.convenience.remove(convenience.convenience_id)
-                continue
+        delete_array, create_array = update_arrays(objects_convenience, convenience_and_removed_photos.convenience)
 
+        delete_stmt = (
+            delete(ObjectConvenience).where(ObjectConvenience.id.in_(delete_array))
+        )
 
+        await session.execute(delete_stmt)
 
+        for convenience_id in create_array:
+            oc = ObjectConvenience(object_id=object.id, convenience_id=convenience_id)
+            await session.add(oc)
+            pass
 
         object.photos.extend(urls)
 
@@ -102,10 +108,33 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
         return object
 
 
-async def update_reservation_status(reservation_data, session):
+def update_arrays(arr1, arr2):
+    # Создаем множество из arr1 для быстрого доступа
+    set1 = set(arr1)
+
+    # Создаем множество из arr2
+    set2 = set(arr2)
+
+    # Вычитаем set2 из set1 для получения уникальных элементов arr1
+    unique_ids = list(set1 - set2)
+
+    # Вычитаем set1 из set2 для получения новых идентификаторов
+    new_ids = list(set2 - set1)
+
+    # Объединяем результаты
+    return unique_ids, new_ids
+
+
+async def update_reservation_status(reservation_data, user, session):
     async with session() as session:
-        query = select(Reservation).where(Reservation.id == reservation_data.id).\
-            options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
+
+        if user.is_admin:
+            query = select(Reservation).where(Reservation.id == reservation_data.id).\
+                options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
+        else:
+            query = select(Reservation).where(Reservation.id == reservation_data.id).\
+                join(Object).filter(Object.author_id == user.id). \
+                options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
         result = await session.execute(query)
         reservation = result.scalar_one_or_none()
 
@@ -113,16 +142,31 @@ async def update_reservation_status(reservation_data, session):
             raise NotFoundedError
 
         reservation.status = reservation_data.status
+
         # session.add(reservation)
+
+        if reservation_data.status == "approved":
+            message = MessageSchema(
+                subject="Fastapi-Mail module",
+                recipients=[reservation.client.email],
+                body=reservation.letter,
+                subtype=MessageType.html)
+
+            fm = FastMail(mail_conf)
+            await fm.send_message(message)
         await session.commit()
     return reservation
 
 
-async def update_reservation(user_id, reservation_data, session):
+async def update_reservation(user, reservation_data, session):
     async with session() as session:
-        query = select(Reservation).where(Reservation.id == reservation_data.id).\
-            join(Object).filter(Object.author_id == user_id).\
-            options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
+        if user.is_admin:
+            query = select(Reservation).where(Reservation.id == reservation_data.id). \
+                options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
+        else:
+            query = select(Reservation).where(Reservation.id == reservation_data.id).\
+                join(Object).filter(Object.author_id == user.id).\
+                options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
         result = await session.execute(query)
         reservation = result.scalar_one_or_none()
 

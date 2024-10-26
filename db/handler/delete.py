@@ -134,9 +134,13 @@ async def delete_object(object_id, user, session):
     return "successful"
 
 
-async def delete_reservation(user_id, reservation_id, session):
+async def delete_reservation(user, reservation_id, session):
     async with session() as session:
-        query = select(Reservation).where(Reservation.id == reservation_id).join(Object).filter(Object.author_id == user_id)
+        if user.is_admin:
+            query = select(Reservation).where(Reservation.id == reservation_id)
+        else:
+            query = select(Reservation).where(Reservation.id == reservation_id).\
+                join(Object).filter(Object.author_id == user)
         result = await session.execute(query)
         reservation = result.scalar_one_or_none()
 

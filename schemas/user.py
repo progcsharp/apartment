@@ -21,11 +21,18 @@ class UserRegister(UserBase):
     fullname: str
     phone: str
     password: str
+    tariff_id: int = None
+
+
+class UserCreate(UserBase):
+    fullname: str
+    phone: str
+    password: str
     is_active: bool = False
     is_verified: bool = False
     is_admin: bool = False
     balance: int = 0
-    date_before: date = date.today()
+    tariff_id: int = None
 
 
 class UserActivateCode(UserBase):
@@ -42,6 +49,13 @@ class UserResponse(UserBase):
     balance: int
     date_before: date
     tariff: Union[Tariff, None]
+
+
+class UserRegisterResponse(BaseModel):
+    id: int
+    fullname: str
+    phone: str
+    password: str
 
 
 class UserResponseList(BaseModel):

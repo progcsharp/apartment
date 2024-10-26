@@ -25,6 +25,7 @@ class ReservationCreate(ReservationBase):
     client_id: int
     description: str
     status: str = "new"
+    letter: str
 
 
 class ReservationResponse(ReservationBase):
@@ -33,6 +34,7 @@ class ReservationResponse(ReservationBase):
     description: str
     client: Client
     object: Object
+    letter: str
 
 
 class ReservationUpdateStatus(BaseModel):
@@ -46,4 +48,5 @@ class ReservationUpdate(BaseModel):
     end_date: date
     description: str
     status: str
+    letter: str
 

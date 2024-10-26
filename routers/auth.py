@@ -6,9 +6,7 @@ from fastapi_cache.backends.memory import InMemoryCacheBackend
 from fastapi_login.exceptions import InvalidCredentialsException
 from fastapi_mail import MessageSchema, MessageType, FastMail
 
-
 from starlette.responses import Response, JSONResponse
-
 
 from config import mail_conf
 from db import redis_cache
@@ -16,7 +14,7 @@ from db.engine import get_db
 from db.handler.create import create_user
 from db.handler.get import get_user
 from db.handler.update import update_user_verified
-from schemas.user import UserRegister, UserActivate, UserLogin, UserResponse, UserActivateCode
+from schemas.user import UserRegister, UserActivate, UserLogin, UserResponse, UserActivateCode, UserRegisterResponse
 from service.security import verify_password, manager
 
 router = APIRouter(prefix="/auth", responses={404: {"description": "Not found"}})
@@ -27,8 +25,9 @@ router = APIRouter(prefix="/auth", responses={404: {"description": "Not found"}}
 #     raise NotFoundedError
 
 
-@router.post('/register', response_model=UserResponse)
-async def register(response: Response, user: UserRegister, cache: InMemoryCacheBackend = Depends(redis_cache), db = Depends(get_db)):
+@router.post('/register', response_model=UserRegisterResponse)
+async def register(response: Response, user: UserRegister, cache: InMemoryCacheBackend = Depends(redis_cache),
+                   db=Depends(get_db)):
     try:
         user_res = await create_user(user, db)
         code = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
@@ -48,7 +47,8 @@ async def register(response: Response, user: UserRegister, cache: InMemoryCacheB
 
 
 @router.post('/activate', response_model=UserResponse)
-async def activate(response: Response, user: UserActivateCode, cache: InMemoryCacheBackend = Depends(redis_cache), db = Depends(get_db)):
+async def activate(response: Response, user: UserActivateCode, cache: InMemoryCacheBackend = Depends(redis_cache),
+                   db=Depends(get_db)):
     code = await cache.get(user.mail)
     if code:
         if code == user.code:
@@ -61,7 +61,8 @@ async def activate(response: Response, user: UserActivateCode, cache: InMemoryCa
 
 
 @router.post('/login', response_model=UserResponse)
-async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend = Depends(redis_cache), db = Depends(get_db)):
+async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend = Depends(redis_cache),
+                db=Depends(get_db)):
     username = data.mail
     password = data.password
 
@@ -88,7 +89,8 @@ async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend
 
 
 @router.post("/login/auth", response_model=UserResponse)
-async def login_auth(response: Response, user: UserActivateCode, cache: InMemoryCacheBackend = Depends(redis_cache), db = Depends(get_db)):
+async def login_auth(response: Response, user: UserActivateCode, cache: InMemoryCacheBackend = Depends(redis_cache),
+                     db=Depends(get_db)):
     user_res = await get_user(user.mail, db)
     if not user_res:
         return JSONResponse(status_code=200, content={"user": "not found"})
@@ -99,12 +101,13 @@ async def login_auth(response: Response, user: UserActivateCode, cache: InMemory
     token = manager.create_access_token(
         data=dict(sub=user_res.mail)
     )
-    manager.set_cookie(response, token)
+    max = 3600*24
+    response.set_cookie(key="cookie", value=token, httponly=True, samesite='none',
+                        secure=True, max_age=max)
     return user_res
 
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie(key='k2bjfb2hif2bl3ihfb32if2ifh32')
-    return response
-
+    response.delete_cookie(key='cookie')
+    return "logout"

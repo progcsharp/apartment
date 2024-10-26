@@ -35,6 +35,10 @@ class User(Base):
     objects = relationship("Object", back_populates="author")
     tariff = relationship("Tariff", back_populates="users")
 
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)
+
 
 class Tariff(Base):
     __tablename__ = 'tariff'
@@ -155,7 +159,12 @@ class Reservation(Base):
     end_date = Column(Date)
     status = Column(String(20))
     description = Column(Text)
+    letter = Column(Text)
 
     # Внешние ключи
     object = relationship("Object", back_populates="reservations")
     client = relationship("Client", back_populates="reservations")
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)

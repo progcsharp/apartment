@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, Reservation, \
     Tariff
+from db.handler.update import calculate_end_date
 from exception.database import NotFoundedError
 from service.file import upload_file
 from service.security import hash_password
@@ -13,10 +14,36 @@ from service.security import hash_password
 
 async def create_user(user_data, session):
     password = await hash_password(user_data.password)
-    user = User(fullname=user_data.fullname, mail=user_data.mail, phone=user_data.phone, password=password,
-                date_before=user_data.date_before)
+    user_data.password = password
+    # user = User(fullname=user_data.fullname, mail=user_data.mail, phone=user_data.phone, password=password,
+    #             date_before=date.today(), is_active=user_data.is_active, is_verified=user_data.is_verified,
+    #             is_admin=user_data.is_admin, balance=user_data.balance)
+    user = User.from_dict(user_data.__dict__)
     async with session() as session:
-        user.tariff = None
+
+        query = select(User).where(User.mail == user_data.mail)
+        result = await session.execute(query)
+        user_check_mail = result.scalar_one_or_none()
+
+        if user_check_mail:
+            raise {"user": "пользователь с такой почтой существует"}
+
+        query = select(User).where(User.phone == user_data.phone)
+        result = await session.execute(query)
+        user_check_phone = result.scalar_one_or_none()
+
+        if user_check_phone:
+            raise {"user": "пользователь с таким номером существует"}
+
+        if user_data.tariff_id:
+            query = select(Tariff).where(Tariff.id == user_data.tariff_id)
+            result = await session.execute(query)
+            tariff = result.scalar_one_or_none()
+
+            await calculate_end_date(user.balance, tariff.daily_price)
+        else:
+            user.date_before = date.today()
+
         session.add(user)
         await session.commit()
 
@@ -92,46 +119,43 @@ async def create_object(object_data, files, user_id, session):
     return object
 
 
-async def create_client(client_data, user_id, session):
+async def create_client(client_data, session, user_id=None):
     client = Client(fullname=client_data.fullname, reiting=client_data.reiting,
                     phone=client_data.phone, email=client_data.email)
 
     async with session() as session:
-
-        query = select(User).where(User.id == user_id)
-        result = await session.execute(query)
-        user = result.scalar_one_or_none()
-
-        if not user:
-            raise NotFoundedError
-
         session.add(client)
+        if not user_id:
+            query = select(User).where(User.id == user_id)
+            result = await session.execute(query)
+            user = result.scalar_one_or_none()
+
+            if not user:
+                raise NotFoundedError
+
+            client_user = UserClient(user_id=user_id, client_id=client.id)
+
+            session.add(client_user)
         await session.commit()
-
-        client_user = UserClient(user_id=user_id, client_id=client.id)
-
-        session.add(client_user)
-        await session.commit()
-
-        query = select(Client).where(Client.id == client.id)
-        result = await session.execute(query)
-        client = result.scalar_one_or_none()
+        #
+        # query = select(Client).where(Client.id == client.id)
+        # result = await session.execute(query)
+        # client = result.scalar_one_or_none()
     return client
 
 
 async def create_reservation(user_id, reservation_data, session):
-    query= select(Object).where(Object.id == reservation_data.object_id).where(Object.author_id == user_id)
-    result = await session.execute(query)
-    object = result.scalar_one_or_none()
+    async with session() as session:
+        query= select(Object).where(Object.id == reservation_data.object_id).where(Object.author_id == user_id)
+        result = await session.execute(query)
+        object = result.scalar_one_or_none()
 
-    if not object:
-        raise NotFoundedError
+        if not object:
+            raise NotFoundedError
 
-    reservation = Reservation(object_id=reservation_data.object_id, client_id=reservation_data.client_id,
-                              start_date=reservation_data.start_date, end_date=reservation_data.end_date,
-                              status=reservation_data.status, description=reservation_data.description)
+        reservation = Reservation.from_dict(reservation_data.__dict__)
 
-    async with session()as session:
+
         if await check_available_time(session, reservation_data.object_id, reservation_data.start_date, reservation_data.end_date):
             session.add(reservation)
             await session.commit()

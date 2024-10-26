@@ -147,11 +147,17 @@ async def get_by_id_object(id, session):
     return object
 
 
-async def get_by_id_object_by_user(object_id, user_id, session):
+async def get_by_id_object_by_user(object_id, user, session):
     async with session() as session:
-        query = select(Object).where(Object.id == object_id).where(Object.author_id == user_id).options(selectinload(Object.city).subqueryload(City.region)).\
-            options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
-            options(selectinload(Object.conveniences))
+        if user.is_admin:
+            query = select(Object).where(Object.id == object_id).options(
+                selectinload(Object.city).subqueryload(City.region)). \
+                options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
+                options(selectinload(Object.conveniences))
+        else:
+            query = select(Object).where(Object.id == object_id).where(Object.author_id == user.id).options(selectinload(Object.city).subqueryload(City.region)).\
+                options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
+                options(selectinload(Object.conveniences))
         result = await session.execute(query)
         object = result.scalar_one_or_none()
 
@@ -161,21 +167,31 @@ async def get_by_id_object_by_user(object_id, user_id, session):
     return object
 
 
-async def get_object_by_user_id( session):
+async def get_object_by_user_id(user, session):
     async with session() as session:
-        query = select(Object).options(selectinload(Object.city).subqueryload(City.region)).\
-            options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
-            options(selectinload(Object.conveniences))
+        if user.is_admin:
+            query = select(Object).options(selectinload(Object.city).subqueryload(City.region)).\
+                options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
+                options(selectinload(Object.conveniences))
+        else:
+            query = select(Object).where(Object.author_id==user.id).options(selectinload(Object.city).subqueryload(City.region)). \
+                options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
+                options(selectinload(Object.conveniences))
         result = await session.execute(query)
         objects = result.scalars().all()
     return objects
 
 
-async def get_all_client(session):
+async def get_all_client(session, user):
     async with session() as session:
-        query = select(Client)
-        result = await session.execute(query)
-        client = result.scalars().all()
+        if not user.admin:
+            query = select(Client).join(UserClient).filter(UserClient.user_id == user.id)
+            result = await session.execute(query)
+            client = result.scalars().all()
+        else:
+            query = select(Client)
+            result = await session.execute(query)
+            client = result.scalars().all()
 
     return client
 

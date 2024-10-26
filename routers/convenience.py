@@ -6,6 +6,8 @@ from db.engine import get_db
 from db.handler.create import create_convenience
 from db.handler.delete import delete_convenience
 from db.handler.get import get_all_convenience, get_convenience_by_id
+from exception.auth import Forbidden
+from permission.is_admin import check_admin
 from schemas.convenience import ConvenienceResponseList, ConvenienceResponse, ConvenienceCreate, ConvenienceBase
 from service.security import manager
 
@@ -13,7 +15,9 @@ router = APIRouter(prefix="/convenience", responses={404: {"description": "Not f
 
 
 @router.get("/all", response_model=ConvenienceResponseList)
-async def get_all(db=Depends(get_db), _=Depends(manager)):
+async def get_all(db=Depends(get_db), user_auth=Depends(manager)):
+    if not await check_admin(user_auth):
+        raise Forbidden
     convenience = await get_all_convenience(db)
     return {"convenience": convenience}
 
