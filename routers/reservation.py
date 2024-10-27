@@ -65,5 +65,5 @@ async def create(reservation_data: ReservationCreate, user_auth=Depends(manager)
 
 @router.delete("/delete/{reservation_id}")
 async def delete(reservation_id: int, user_auth=Depends(manager), db=Depends(get_db)):
-    reservation = await delete_reservation(user_auth.id, reservation_id, db)
+    reservation = await delete_reservation(user_auth, reservation_id, db)
     return reservation

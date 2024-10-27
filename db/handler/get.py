@@ -30,7 +30,7 @@ async def get_all_users(session):
 
 async def get_user(mail, session):
     async with session() as session:
-        query = select(User).where(User.mail == mail).where(User.is_admin==False).options(selectinload(User.objects)).options(selectinload(User.tariff))
+        query = select(User).where(User.mail == mail).options(selectinload(User.objects)).options(selectinload(User.tariff))
         result = await session.execute(query)
         user = result.scalar_one_or_none()
 

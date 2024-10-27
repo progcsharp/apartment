@@ -72,8 +72,8 @@ async def update(convenience_and_removed_photos: ObjectUpdatePhotosConvenience =
 
 @router.post("/create", response_model=ObjectResponse)
 async def create(object_data: ObjectCreate = Body(...), files: Optional[List[UploadFile]] = File(...),
-                 db=Depends(get_db)):
-    new_object = await create_object(object_data, files, 46, db)
+                 db=Depends(get_db), user_auth=Depends(manager)):
+    new_object = await create_object(object_data, files, user_auth.id, db)
     return new_object
 
 

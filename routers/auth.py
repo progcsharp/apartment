@@ -14,7 +14,8 @@ from db.engine import get_db
 from db.handler.create import create_user
 from db.handler.get import get_user
 from db.handler.update import update_user_verified
-from schemas.user import UserRegister, UserActivate, UserLogin, UserResponse, UserActivateCode, UserRegisterResponse
+from exception.auth import NoVerifyCode, NoVerifyPWD, CodeExpire
+from schemas.user import UserRegister, UserLogin, UserActivateCode, UserRegisterResponse
 from service.security import verify_password, manager
 
 router = APIRouter(prefix="/auth", responses={404: {"description": "Not found"}})
@@ -41,12 +42,12 @@ async def register(response: Response, user: UserRegister, cache: InMemoryCacheB
         fm = FastMail(mail_conf)
         await fm.send_message(message)
     except Exception as e:
-        raise
+        raise e 
 
     return user_res
 
 
-@router.post('/activate', response_model=UserResponse)
+@router.post('/activate', response_model=UserRegisterResponse)
 async def activate(response: Response, user: UserActivateCode, cache: InMemoryCacheBackend = Depends(redis_cache),
                    db=Depends(get_db)):
     code = await cache.get(user.mail)
@@ -54,13 +55,13 @@ async def activate(response: Response, user: UserActivateCode, cache: InMemoryCa
         if code == user.code:
             user_res = await update_user_verified(user.mail, db)
         else:
-            raise {"user": "Code not sucessful"}
+            raise NoVerifyCode
     else:
-        raise {"error": "code expire"}
+        raise CodeExpire
     return user_res
 
 
-@router.post('/login', response_model=UserResponse)
+@router.post('/login', response_model=UserRegisterResponse)
 async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend = Depends(redis_cache),
                 db=Depends(get_db)):
     username = data.mail
@@ -72,7 +73,7 @@ async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend
         raise InvalidCredentialsException
 
     if not await verify_password(password, user.password):
-        raise
+        raise NoVerifyPWD
     code = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
     print(f"{code}_login")
     message = MessageSchema(
@@ -88,15 +89,20 @@ async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend
     return user
 
 
-@router.post("/login/auth", response_model=UserResponse)
+@router.post("/login/auth", response_model=UserRegisterResponse)
 async def login_auth(response: Response, user: UserActivateCode, cache: InMemoryCacheBackend = Depends(redis_cache),
                      db=Depends(get_db)):
     user_res = await get_user(user.mail, db)
     if not user_res:
         return JSONResponse(status_code=200, content={"user": "not found"})
     code = await cache.get(f'{user.mail}_login')
-    if code != user.code:
-        return False
+    if code:
+        if code == user.code:
+            user_res = await update_user_verified(user.mail, db)
+        else:
+            raise NoVerifyCode
+    else:
+        raise CodeExpire
 
     token = manager.create_access_token(
         data=dict(sub=user_res.mail)
