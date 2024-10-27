@@ -15,9 +15,7 @@ router = APIRouter(prefix="/convenience", responses={404: {"description": "Not f
 
 
 @router.get("/all", response_model=ConvenienceResponseList)
-async def get_all(db=Depends(get_db), user_auth=Depends(manager)):
-    if not await check_admin(user_auth):
-        raise Forbidden
+async def get_all(db=Depends(get_db), _=Depends(manager)):
     convenience = await get_all_convenience(db)
     return {"convenience": convenience}
 

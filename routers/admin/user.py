@@ -16,11 +16,11 @@ router = APIRouter(prefix="/user", responses={404: {"description": "Not found"}}
 
 
 #admin
-@router.get("/id/", response_model=UserResponse)
-async def get(id: int, db=Depends(get_db), user_auth=Depends(manager)):
+@router.get("/id/{user_id}", response_model=UserResponse)
+async def get(user_id: int, db=Depends(get_db), user_auth=Depends(manager)):
     if not await check_admin(user_auth):
         raise
-    user = await get_user_by_id(id, db)
+    user = await get_user_by_id(user_id, db)
     return user
 
 
@@ -64,7 +64,7 @@ async def reset_password(user_data: UserResetPassword, db=Depends(get_db), user_
 #     return user
 
 #admin
-@router.put("/update/admin", response_model=UserResponse)
+@router.put("/update", response_model=UserResponse)
 async def update(user_data: UserUpdateAdmin, db=Depends(get_db), user_auth=Depends(manager)):
     if not await check_admin(user_auth):
         raise

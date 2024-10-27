@@ -28,3 +28,5 @@ async def delete(region_id: int, user_auth=Depends(manager), db=Depends(get_db))
         raise Forbidden
 
     await delete_region(region_id, db)
+
+    return "successful"

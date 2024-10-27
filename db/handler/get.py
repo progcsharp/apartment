@@ -10,7 +10,7 @@ from service.security import manager
 
 async def get_user_by_id(id, session):
     async with session() as session:
-        query = select(User).where(User.id == id).options(selectinload(User.tariff))
+        query = select(User).where(User.id == id).where(User.is_admin==False).options(selectinload(User.tariff))
         result = await session.execute(query)
         user = result.scalar_one_or_none()
 
@@ -22,7 +22,7 @@ async def get_user_by_id(id, session):
 
 async def get_all_users(session):
     async with session() as session:
-        query = select(User).options(selectinload(User.tariff))
+        query = select(User).where(User.is_admin==False).options(selectinload(User.tariff))
         result = await session.execute(query)
         users = result.scalars().all()
         return users
@@ -30,7 +30,7 @@ async def get_all_users(session):
 
 async def get_user(mail, session):
     async with session() as session:
-        query = select(User).where(User.mail == mail).options(selectinload(User.objects)).options(selectinload(User.tariff))
+        query = select(User).where(User.mail == mail).where(User.is_admin==False).options(selectinload(User.objects)).options(selectinload(User.tariff))
         result = await session.execute(query)
         user = result.scalar_one_or_none()
 
@@ -122,11 +122,16 @@ async def get_convenience_by_id(convenience_id, session):
     return convenience
 
 
-async def get_all_object(session):
+async def get_all_object(user, session):
     async with session() as session:
-        query = select(Object).options(selectinload(Object.city).subqueryload(City.region)).\
-            options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
-            options(selectinload(Object.conveniences))
+        if user.is_admin:
+            query = select(Object).options(selectinload(Object.city).subqueryload(City.region)).\
+                options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
+                options(selectinload(Object.conveniences))
+        else:
+            query = select(Object).where(Object.author_id == user.id).options(selectinload(Object.city).subqueryload(City.region)). \
+                options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
+                options(selectinload(Object.conveniences))
         result = await session.execute(query)
         object = result.scalars().all()
 
@@ -167,15 +172,11 @@ async def get_by_id_object_by_user(object_id, user, session):
     return object
 
 
-async def get_object_by_user_id(user, session):
+async def get_object_by_user_id(user_id, user, session):
     async with session() as session:
         if user.is_admin:
-            query = select(Object).options(selectinload(Object.city).subqueryload(City.region)).\
+            query = select(Object).where(Object.author_id==user_id).options(selectinload(Object.city).subqueryload(City.region)).\
                 options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
-                options(selectinload(Object.conveniences))
-        else:
-            query = select(Object).where(Object.author_id==user.id).options(selectinload(Object.city).subqueryload(City.region)). \
-                options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
                 options(selectinload(Object.conveniences))
         result = await session.execute(query)
         objects = result.scalars().all()
@@ -184,7 +185,7 @@ async def get_object_by_user_id(user, session):
 
 async def get_all_client(session, user):
     async with session() as session:
-        if not user.admin:
+        if not user.is_admin:
             query = select(Client).join(UserClient).filter(UserClient.user_id == user.id)
             result = await session.execute(query)
             client = result.scalars().all()
@@ -258,7 +259,7 @@ async def get_reservation_by_client_id(user, client_id, session):
         query = select(Reservation).where(Reservation.client_id == client_id).\
             options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
 
-        if not user.admin:
+        if not user.is_admin:
             query = query.join(Object).filter(Object.author_id == user.id)
 
         query = query.\
@@ -285,7 +286,7 @@ async def get_reservation_by_id(user, reservation_id, session):
         query = select(Reservation).where(Reservation.id == reservation_id)
 
         if not user.is_admin:
-            query = query.join(Object).filter(Object.author_id == user)
+            query = query.join(Object).filter(Object.author_id == user.id)
 
         query = query.options(selectinload(Reservation.client)).\
             options(selectinload(Reservation.object))

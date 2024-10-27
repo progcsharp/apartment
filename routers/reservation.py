@@ -27,21 +27,21 @@ async def get_by_object_id(object_id: int, user_auth=Depends(manager), db=Depend
 
 
 #admin
-@router.get("/userid/{user_id}", response_model=List[ReservationResponse])
-async def get_by_user_id(user_id: int, db=Depends(get_db)):
-    reservation = await get_reservation_by_user_id(user_id, db)
-    return reservation
+# @router.get("/userid/{user_id}", response_model=List[ReservationResponse])
+# async def get_by_user_id(user_id: int, db=Depends(get_db)):
+#     reservation = await get_reservation_by_user_id(user_id, db)
+#     return reservation
 
 
 @router.get("/id/{reservation_id}", response_model=ReservationResponse)
 async def get_by_id(reservation_id: int, user_auth=Depends(manager), db=Depends(get_db)):
-    reservation = await get_reservation_by_id(user_auth.id, reservation_id, db)
+    reservation = await get_reservation_by_id(user_auth, reservation_id, db)
     return reservation
 
 
 @router.get("/clientid/{client_id}", response_model=List[ReservationResponse])
 async def get_by_user_id(client_id: int, user_auth=Depends(manager), db=Depends(get_db)):
-    reservation = await get_reservation_by_client_id(user_auth.id, client_id, db)
+    reservation = await get_reservation_by_client_id(user_auth, client_id, db)
     return reservation
 
 

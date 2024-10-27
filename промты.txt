@@ -157,11 +157,7 @@ CREATE TABLE tariff (
     icon TEXT
 );
 
+ALTER TABLE reservation ADD COLUMN letter TEXT;
 
-y0_AgAAAABc4z-jAAynRAAAAAEVkYPxAADthVjoxJZO7pQjZcGjTTB9fTBFvg
-
-clientid ff8154651e5747de9074a356d2c354bd
-
-client secret daf46c76c2e547568e5fc78b24a9eeb8
 
 пароль почты 964dCGrEXvP3BcnwaBkV

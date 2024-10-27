@@ -229,7 +229,7 @@ async def update_user_password(user_data, user_id, session):
 
 async def update_user(user_data, session):
     async with session() as session:
-        query = select(User).where(User.id == user_id)
+        query = select(User).where(User.id == user_data.id).options(selectinload(User.tariff))
         result = await session.execute(query)
         user = result.scalar_one_or_none()
 
@@ -244,6 +244,8 @@ async def update_user(user_data, session):
 
         await session.execute(stmt)
         await session.commit()
+
+    return user
 
 
 async def calculate_end_date(balance, price_per_day):

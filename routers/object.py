@@ -38,7 +38,7 @@ router = APIRouter(prefix="/object", responses={404: {"description": "Not found"
 
 @router.get("/all", response_model=List[ObjectResponse])
 async def get_all(db=Depends(get_db), user_auth=Depends(manager)):
-    objects = await get_object_by_user_id(user=user_auth, session=db)
+    objects = await get_all_object(user=user_auth, session=db)
     return objects
 
 
@@ -73,7 +73,7 @@ async def update(convenience_and_removed_photos: ObjectUpdatePhotosConvenience =
 @router.post("/create", response_model=ObjectResponse)
 async def create(object_data: ObjectCreate = Body(...), files: Optional[List[UploadFile]] = File(...),
                  db=Depends(get_db)):
-    new_object = await create_object(object_data, files, 3, db)
+    new_object = await create_object(object_data, files, 46, db)
     return new_object
 
 
