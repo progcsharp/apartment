@@ -6,7 +6,7 @@ from db.engine import get_db
 from db.handler.create import create_reservation
 from db.handler.delete import delete_reservation
 from db.handler.get import get_reservation_by_object_id, get_reservation_by_user_id, get_reservation_by_id, \
-    get_reservation_by_client_id, get_reservation_all_by_admin
+    get_reservation_by_client_id, get_reservation_all
 from db.handler.update import update_reservation_status, update_reservation
 from exception.auth import Forbidden
 from permission.is_admin import check_admin
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/reservation", responses={404: {"description": "Not f
 async def get_all(user_auth=Depends(manager), db=Depends(get_db)):
     if not await check_admin(user_auth):
         raise
-    reservation = await get_reservation_all_by_admin(db)
+    reservation = await get_reservation_all(user_auth, db)
     return reservation
 
 
@@ -83,5 +83,5 @@ async def update(reservation_data: ReservationUpdate, user_auth=Depends(manager)
 async def delete(reservation_id: int, user_auth=Depends(manager), db=Depends(get_db)):
     if not await check_admin(user_auth):
         raise Forbidden
-    reservation = await delete_reservation(user_auth.id, reservation_id, db)
+    reservation = await delete_reservation(user_auth, reservation_id, db)
     return reservation

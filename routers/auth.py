@@ -42,7 +42,7 @@ async def register(response: Response, user: UserRegister, cache: InMemoryCacheB
         fm = FastMail(mail_conf)
         await fm.send_message(message)
     except Exception as e:
-        raise e 
+        raise e
 
     return user_res
 

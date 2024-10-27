@@ -43,7 +43,7 @@ async def update_user_activate(user_data,  session):
     return user
 
 
-async def  update_object_activate(object_data, user, session):
+async def update_object_activate(object_data, user, session):
     async with session() as session:
         query = select(Object).where(Object.id == object_data.id).options(selectinload(Object.city).subqueryload(City.region)).\
             options(selectinload(Object.apartment)).options(selectinload(Object.author)).\

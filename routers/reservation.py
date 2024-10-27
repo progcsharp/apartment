@@ -16,7 +16,7 @@ router = APIRouter(prefix="/reservation", responses={404: {"description": "Not f
 
 @router.get("/all", response_model=List[ReservationResponse])
 async def get_all(user_auth=Depends(manager), db=Depends(get_db)):
-    reservation = await get_reservation_all(user_auth.id, db)
+    reservation = await get_reservation_all(user_auth, db)
     return reservation
 
 

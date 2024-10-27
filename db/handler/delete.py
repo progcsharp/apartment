@@ -140,7 +140,7 @@ async def delete_reservation(user, reservation_id, session):
             query = select(Reservation).where(Reservation.id == reservation_id)
         else:
             query = select(Reservation).where(Reservation.id == reservation_id).\
-                join(Object).filter(Object.author_id == user)
+                join(Object).filter(Object.author_id == user.id)
         result = await session.execute(query)
         reservation = result.scalar_one_or_none()
 

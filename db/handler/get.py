@@ -218,20 +218,14 @@ async def get_client_by_id(user_id, session):
     return client
 
 
-async def get_reservation_all(user_id, session):
+async def get_reservation_all(user, session):
     async with session() as session:
-        query = select(Reservation).join(Object).filter(Object.author_id == user_id).\
-            options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
-        result = await session.execute(query)
-        reservation = result.scalars().all()
-
-    return reservation
-
-
-async def get_reservation_all_by_admin(session):
-    async with session() as session:
-        query = select(Reservation).join(Object).\
-            options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
+        if user.is_admin:
+            query = select(Reservation).join(Object). \
+                options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
+        else:
+            query = select(Reservation).join(Object).filter(Object.author_id == user.id).\
+                options(selectinload(Reservation.object)).options(selectinload(Reservation.client))
         result = await session.execute(query)
         reservation = result.scalars().all()
 

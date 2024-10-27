@@ -8,11 +8,13 @@ from routers.admin.object import router as object_router
 from routers.admin.user import router as user
 from routers.admin.tariff import router as tariff
 from routers.admin.client import router as client
+from routers.admin.reservation import router as reservation
 
 router = APIRouter(prefix="/admin", responses={404: {"description": "Not found"}})
 
 router.include_router(router=apartment)
 router.include_router(router=region)
+router.include_router(router=reservation)
 router.include_router(router=city)
 router.include_router(router=convenience)
 router.include_router(router=object_router)
