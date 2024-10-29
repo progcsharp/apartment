@@ -55,7 +55,7 @@ class UserRegisterResponse(BaseModel):
     id: int
     fullname: str
     phone: str
-    password: str
+    mail: str
 
 
 class UserResponseList(BaseModel):

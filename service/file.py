@@ -33,17 +33,12 @@ def upload_file(files):
         name = generate_unique_filename(file.filename)
         if check_for_duplicates(str(name)):
             print(s3_client.put_object(Body=file.file, Bucket="stayflex", Key=name))
-            url = s3_client.generate_presigned_url(
-                ClientMethod='get_object',
-                Params={
-                    'Bucket': BUCKET,
-                    'Key': name
-                }
-            )
+            url = f"https://b95b2fa5-a84e-458c-9dcd-0f6142437182.selstorage.ru/{name}"
             urls.append(url)
     return urls
 
 
 def delete_file(files):
     for file in files:
-        s3_client.delete_object(Bucket=BUCKET, Key=file)
+        name = file.replace("https://b95b2fa5-a84e-458c-9dcd-0f6142437182.selstorage.ru/", '')
+        s3_client.delete_object(Bucket=BUCKET, Key=name)

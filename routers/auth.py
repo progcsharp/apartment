@@ -115,5 +115,6 @@ async def login_auth(response: Response, user: UserActivateCode, cache: InMemory
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie(key='cookie')
+    response.delete_cookie(key='cookie', httponly=True, samesite='none',
+                        secure=True)
     return "logout"

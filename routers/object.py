@@ -43,8 +43,8 @@ async def get_all(db=Depends(get_db), user_auth=Depends(manager)):
 
 
 @router.get("/id/{object_id}", response_model=ObjectResponse)
-async def get(object_id: int, db=Depends(get_db), user_auth=Depends(manager)):
-    objects = await get_by_id_object_by_user(object_id, user_auth, db)
+async def get(object_id: int, db=Depends(get_db)):
+    objects = await get_by_id_object_by_user(object_id, db)
     return objects
 
 
@@ -64,8 +64,8 @@ async def activate(object_id: ObjectActivate, user_auth=Depends(manager),
 
 
 @router.put("/update", response_model=ObjectResponse)
-async def update(convenience_and_removed_photos: ObjectUpdatePhotosConvenience = Body(...), update_object: ObjectUpdate = Body(...), files: Optional[List[UploadFile]] = File(...),
-                 db=Depends(get_db)):
+async def update(convenience_and_removed_photos: ObjectUpdatePhotosConvenience = Body(...), update_object: ObjectUpdate = Body(...),
+                 files: Optional[List[UploadFile]] = File(None), db=Depends(get_db), _=Depends(manager)):
     object = await update_object_by_id(update_object, convenience_and_removed_photos, files, db)
     return object
 

@@ -35,7 +35,7 @@ async def create_user(user_data, session):
         if user_check_phone:
             raise {"user": "пользователь с таким номером существует"}
 
-        if user_data.tariff_id:
+        if user_data.tariff_id != 0:
             query = select(Tariff).where(Tariff.id == user_data.tariff_id)
             result = await session.execute(query)
             tariff = result.scalar_one_or_none()
@@ -132,10 +132,6 @@ async def create_client(client_data, session, user_id=None):
 
             if not user:
                 raise NotFoundedError
-
-            client_user = UserClient(user_id=user_id, client_id=client.id)
-
-            session.add(client_user)
         await session.commit()
         #
         # query = select(Client).where(Client.id == client.id)
@@ -157,6 +153,9 @@ async def create_reservation(user_id, reservation_data, session):
 
 
         if await check_available_time(session, reservation_data.object_id, reservation_data.start_date, reservation_data.end_date):
+            client_user = UserClient(user_id=user_id, client_id=reservation_data.client_id)
+
+            session.add(client_user)
             session.add(reservation)
             await session.commit()
         else:

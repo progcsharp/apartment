@@ -74,6 +74,10 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
         if not object:
             raise NotFoundedError
 
+        set2 = set(convenience_and_removed_photos.removed_photos)
+
+        photos = [element for element in object.photos if element not in set2]
+
         delete_file(convenience_and_removed_photos.removed_photos)
         urls = upload_file(files)
 
@@ -84,7 +88,7 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
         delete_array, create_array = update_arrays(objects_convenience, convenience_and_removed_photos.convenience)
 
         delete_stmt = (
-            delete(ObjectConvenience).where(ObjectConvenience.id.in_(delete_array))
+            delete(ObjectConvenience).where(ObjectConvenience.convenience_id.in_(delete_array))
         )
 
         await session.execute(delete_stmt)
@@ -92,9 +96,9 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
         for convenience_id in create_array:
             oc = ObjectConvenience(object_id=object.id, convenience_id=convenience_id)
             await session.add(oc)
-            pass
 
-        object.photos.extend(urls)
+        photos.extend(urls)
+        object.photos = photos
 
         stmt = (
             update(Object)
