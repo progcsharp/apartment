@@ -16,4 +16,6 @@ class ApartmentResponse(ApartmentBase):
 
 
 class ApartmentResponseList(BaseModel):
-    apartments: List[ApartmentResponse]
+    id: int
+    name: str
+    object_count: int

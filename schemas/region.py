@@ -20,6 +20,7 @@ class RegionResponse(BaseModel):
     id: int
     name: str
     cities: List[CityInRegion] = []
+    object_count: int
 
 
 class RegionCreateResponse(BaseModel):

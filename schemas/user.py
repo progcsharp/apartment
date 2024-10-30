@@ -59,7 +59,11 @@ class UserRegisterResponse(BaseModel):
 
 
 class UserResponseList(BaseModel):
-    users: List[UserResponse]
+    id: int
+    fullname: str
+    is_active: bool
+    date_before: date
+    object_count: int
 
 
 class UserTariffActivate(BaseModel):

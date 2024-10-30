@@ -3,13 +3,9 @@ from typing import List
 from fastapi import APIRouter, Depends, Body
 
 from db.engine import get_db
-from db.handler.create import create_user
 from db.handler.delete import delete_user
-from db.handler.get import get_user_by_id, get_all_users, get_user
-from db.handler.update import update_user_activate, update_user_tariff_activate, update_user_password, update_user
-from permission.is_admin import check_admin
-from schemas.user import UserResponse, UserResponseList, UserRegister, UserTariffActivate, UserActivate, \
-    UserResetPassword, UserUpdateAdmin, UserUpdate
+from db.handler.get import get_user
+from schemas.user import UserResponse
 from service.security import manager
 
 router = APIRouter(prefix="/user", responses={404: {"description": "Not found"}})

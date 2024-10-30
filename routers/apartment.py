@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import APIRouter, Depends
 
 from db.engine import get_db
@@ -10,10 +12,10 @@ from service.security import manager
 router = APIRouter(prefix="/property-type", responses={404: {"description": "Not found"}})
 
 
-@router.get("/all", response_model=ApartmentResponseList)
+@router.get("/all", response_model=List[ApartmentResponseList])
 async def get_all(db=Depends(get_db), _=Depends(manager)):
     apartments = await get_all_apartment(db)
-    return {"apartments": apartments}
+    return apartments
 
 
 @router.get("/id/{apartment_id}", response_model=ApartmentResponse)

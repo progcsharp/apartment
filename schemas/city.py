@@ -19,6 +19,7 @@ class RegionOfCity(BaseModel):
 class CityResponse(CityBase):
     id: int
     region: RegionOfCity
+    object_count: int
 
 
 class CityResponseList(BaseModel):

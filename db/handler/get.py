@@ -25,6 +25,13 @@ async def get_all_users(session):
         query = select(User).where(User.is_admin==False).options(selectinload(User.tariff))
         result = await session.execute(query)
         users = result.scalars().all()
+
+        for user in users:
+            query_object = select(func.count(Object.id)).where(Object.author_id == user.id)
+            result = await session.execute(query_object)
+            object_count = result.scalar()
+            user.object_count = object_count
+
         return users
 
 
@@ -46,6 +53,12 @@ async def get_all_region(session):
         query = select(Region).options(selectinload(Region.cities))
         result = await session.execute(query)
         regions = result.scalars().all()
+
+        for region in regions:
+            query_object = select(func.count(Object.id)).join(City).filter(City.region_id == region.id)
+            result = await session.execute(query_object)
+            object_count = result.scalar()
+            region.object_count = object_count
         return regions
 
 
@@ -58,14 +71,28 @@ async def get_region_by_id(id, session):
         if not region:
             raise NotFoundedError
 
+        query_object = select(func.count(Object.id)).join(City).filter(City.region_id == region.id)
+        result = await session.execute(query_object)
+        object_count = result.scalar()
+        region.object_count = object_count
+
     return region
 
 
 async def get_all_cities(session):
     async with session() as session:
+
+        # objects_count = select(func.count(Object)).where(Object.city_id == )
+
         query = select(City).options(selectinload(City.region))
         result = await session.execute(query)
         cities = result.scalars().all()
+
+        for city in cities:
+            query_object = select(func.count(Object.id)).where(Object.city_id == city.id)
+            result = await session.execute(query_object)
+            objects_count = result.scalar()
+            city.object_count = objects_count
         return cities
 
 
@@ -78,6 +105,11 @@ async def get_city_by_id(id:int, session):
         if not city:
             raise NotFoundedError
 
+        query_object = select(func.count(Object.id)).where(Object.city_id == city.id)
+        result = await session.execute(query_object)
+        objects_count = result.scalar()
+        city.object_count = objects_count
+
     return city
 
 
@@ -85,8 +117,15 @@ async def get_all_apartment(session):
     async with session() as session:
         query = select(Apartment)
         result = await session.execute(query)
-        apartment = result.scalars().all()
-        return apartment
+        apartments = result.scalars().all()
+
+        for apartment in apartments:
+            query_object = select(func.count(Object.id)).where(Object.apartment_id == apartment.id)
+            result = await session.execute(query_object)
+            objects_count = result.scalar()
+            apartment.object_count = objects_count
+
+        return apartments
 
 
 async def get_apartment_by_id(id: int, session):
@@ -106,8 +145,15 @@ async def get_all_convenience(session):
     async with session() as session:
         query = select(Convenience)
         result = await session.execute(query)
-        convenience = result.scalars().all()
-        return convenience
+        conveniences = result.scalars().all()
+
+        # for convenience in conveniences:
+        #     query_object = select(func.count(Object.id)).where(Object.city_id == city.id)
+        #     result = await session.execute(query_object)
+        #     objects_count = result.scalar()
+        #     city.object_count = objects_count
+
+        return conveniences
 
 
 async def get_convenience_by_id(convenience_id, session):

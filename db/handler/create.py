@@ -35,18 +35,19 @@ async def create_user(user_data, session):
         if user_check_phone:
             raise {"user": "пользователь с таким номером существует"}
 
-        if user_data.tariff_id != 0:
+        if user_data.tariff_id != 1:
             query = select(Tariff).where(Tariff.id == user_data.tariff_id)
             result = await session.execute(query)
             tariff = result.scalar_one_or_none()
 
-            await calculate_end_date(user.balance, tariff.daily_price)
+            end_date = await calculate_end_date(user.balance, tariff.daily_price)
+            user.date_before = end_date
         else:
             user.date_before = date.today()
 
         session.add(user)
         await session.commit()
-    
+
     return user
 
 
