@@ -33,7 +33,7 @@ async def register(response: Response, user: UserRegister, cache: InMemoryCacheB
         user_res = await create_user(user, db)
         code = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
         message = MessageSchema(
-            subject="Fastapi-Mail module",
+            subject="Активация пользователя",
             recipients=[user_res.mail],
             body=f'<p>{code}</p>',
             subtype=MessageType.html)
@@ -77,7 +77,7 @@ async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend
     code = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
     print(f"{code}_login")
     message = MessageSchema(
-        subject="Fastapi-Mail module",
+        subject="Двухфакторная авторизация",
         recipients=[user.mail],
         body=f'<p>{code}</p>',
         subtype=MessageType.html)

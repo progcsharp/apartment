@@ -79,7 +79,10 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
         photos = [element for element in object.photos if element not in set2]
 
         delete_file(convenience_and_removed_photos.removed_photos)
-        urls = upload_file(files)
+        if files:
+            urls = upload_file(files)
+            photos.extend(urls)
+            object.photos = photos
 
         query = select(ObjectConvenience.convenience_id).where(ObjectConvenience.object_id == object_data.id)
         result = await session.execute(query)
@@ -97,8 +100,7 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
             oc = ObjectConvenience(object_id=object.id, convenience_id=convenience_id)
             await session.add(oc)
 
-        photos.extend(urls)
-        object.photos = photos
+
 
         stmt = (
             update(Object)

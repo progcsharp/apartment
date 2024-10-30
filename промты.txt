@@ -161,3 +161,115 @@ ALTER TABLE reservation ADD COLUMN letter TEXT;
 
 
 пароль почты 964dCGrEXvP3BcnwaBkV
+
+################################################################################################################################################################################
+
+
+CREATE TABLE "user" (
+    id SERIAL PRIMARY KEY,
+    fullname TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    mail TEXT NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT false,
+    is_verified BOOLEAN DEFAULT false,
+    is_admin BOOLEAN DEFAULT false,
+    tariff_id INTEGER REFERENCES tariff(id),
+    balance INTEGER DEFAULT 0,
+    date_before DATE
+);
+
+-- Создаем связующую таблицу между user и client
+CREATE TABLE "client_user" (
+    user_id INTEGER REFERENCES "user"(id),
+    client_id INTEGER REFERENCES client(id),
+    PRIMARY KEY (user_id, client_id)
+);
+
+-- Создаем таблицу reservation
+CREATE TABLE "reservation" (
+    id SERIAL PRIMARY KEY,
+    object_id INTEGER REFERENCES object(id),
+    client_id INTEGER REFERENCES client(id),
+    start_date DATE,
+    end_date DATE,
+    status VARCHAR(20),
+    description TEXT,
+    letter TEXT
+);
+
+-- Создаем таблицу object
+CREATE TABLE "object" (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    author_id INTEGER REFERENCES "user"(id),
+    city_id INTEGER REFERENCES city(id),
+    apartment_id INTEGER REFERENCES apartment(id),
+    description TEXT,
+    price INTEGER,
+    area TEXT,
+    room_count INTEGER,
+    adult_places INTEGER,
+    child_places INTEGER,
+    floor TEXT,
+    min_ded INTEGER,
+    prepayment_percentage INTEGER,
+    photos TEXT[],
+    address TEXT,
+    active BOOLEAN DEFAULT false
+);
+
+-- Создаем таблицу object_convenience для связи many-to-many между object и convenience
+CREATE TABLE "object_convenience" (
+    object_id INTEGER REFERENCES object(id),
+    convenience_id INTEGER REFERENCES convenience(id),
+    PRIMARY KEY (object_id, convenience_id)
+);
+
+-- Создаем таблицу convenience
+CREATE TABLE "convenience" (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    icon TEXT
+);
+
+-- Создаем таблицу client
+CREATE TABLE "client" (
+    id SERIAL PRIMARY KEY,
+    fullname VARCHAR(255),
+    reiting FLOAT,
+    phone VARCHAR(20),
+    email TEXT
+);
+
+-- Создаем таблицу region
+CREATE TABLE "region" (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL
+);
+
+-- Создаем таблицу city
+CREATE TABLE "city" (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    region_id INTEGER REFERENCES region(id) ON DELETE CASCADE
+);
+
+-- Создаем таблицу apartment
+CREATE TABLE "apartment" (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL
+);
+
+-- Создаем таблицу tariff
+CREATE TABLE "tariff" (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    daily_price INTEGER NOT NULL,
+    object_count INTEGER NOT NULL,
+    description TEXT,
+    icon TEXT
+);
+
+ALTER TABLE user ADD CONSTRAINT unique_phone_mail UNIQUE (phone, mail);
+ALTER TABLE client ADD CONSTRAINT unique_client_phone_email UNIQUE (phone, email);

@@ -46,7 +46,7 @@ async def create_user(user_data, session):
 
         session.add(user)
         await session.commit()
-
+    
     return user
 
 
