@@ -65,8 +65,8 @@ async def activate(object_id: ObjectActivate, user_auth=Depends(manager),
 
 @router.put("/update", response_model=ObjectResponse)
 async def update(convenience_and_removed_photos: ObjectUpdatePhotosConvenience = Body(...), update_object: ObjectUpdate = Body(...),
-                 files: Optional[List[UploadFile]] = File(None), db=Depends(get_db)):
-    object = await update_object_by_id(update_object, convenience_and_removed_photos, files, db)
+                 files: Optional[List[UploadFile]] = File(None), db=Depends(get_db), auth_user=Depends(manager)):
+    object = await update_object_by_id(update_object, convenience_and_removed_photos, files, db, auth_user)
     return object
 
 

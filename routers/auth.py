@@ -8,14 +8,14 @@ from fastapi_mail import MessageSchema, MessageType, FastMail
 
 from starlette.responses import Response, JSONResponse
 
-from config import mail_conf
 from db import redis_cache
 from db.engine import get_db
 from db.handler.create import create_user
 from db.handler.get import get_user
 from db.handler.update import update_user_verified
-from exception.auth import NoVerifyCode, NoVerifyPWD, CodeExpire
+from exception.auth import NoVerifyCode, NoVerifyPWD, CodeExpire, Forbidden
 from schemas.user import UserRegister, UserLogin, UserActivateCode, UserRegisterResponse
+from service.mail import authorization, mail_conf, register
 from service.security import verify_password, manager
 
 router = APIRouter(prefix="/auth", responses={404: {"description": "Not found"}})
@@ -27,18 +27,15 @@ router = APIRouter(prefix="/auth", responses={404: {"description": "Not found"}}
 
 
 @router.post('/register', response_model=UserRegisterResponse)
-async def register(response: Response, user: UserRegister, cache: InMemoryCacheBackend = Depends(redis_cache),
+async def register(response: Response, user: UserRegister,
                    db=Depends(get_db)):
     try:
         user_res = await create_user(user, db)
-        code = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
         message = MessageSchema(
-            subject="Активация пользователя",
+            subject=register['Theme'],
             recipients=[user_res.mail],
-            body=f'<p>{code}</p>',
+            body=register['description'],
             subtype=MessageType.html)
-        await cache.set(user_res.mail, code)
-        await cache.expire(user_res.mail, 3600)
         fm = FastMail(mail_conf)
         await fm.send_message(message)
     except Exception as e:
@@ -47,18 +44,18 @@ async def register(response: Response, user: UserRegister, cache: InMemoryCacheB
     return user_res
 
 
-@router.post('/activate', response_model=UserRegisterResponse)
-async def activate(response: Response, user: UserActivateCode, cache: InMemoryCacheBackend = Depends(redis_cache),
-                   db=Depends(get_db)):
-    code = await cache.get(user.mail)
-    if code:
-        if code == user.code:
-            user_res = await update_user_verified(user.mail, db)
-        else:
-            raise NoVerifyCode
-    else:
-        raise CodeExpire
-    return user_res
+# @router.post('/activate', response_model=UserRegisterResponse)
+# async def activate(response: Response, user: UserActivateCode, cache: InMemoryCacheBackend = Depends(redis_cache),
+#                    db=Depends(get_db)):
+#     code = await cache.get(user.mail)
+#     if code:
+#         if code == user.code:
+#             user_res = await update_user_verified(user.mail, db)
+#         else:
+#             raise NoVerifyCode
+#     else:
+#         raise CodeExpire
+#     return user_res
 
 
 @router.post('/login', response_model=UserRegisterResponse)
@@ -76,10 +73,11 @@ async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend
         raise NoVerifyPWD
     code = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
     print(f"{code}_login")
+    mail_text = authorization
     message = MessageSchema(
-        subject="Двухфакторная авторизация",
+        subject=mail_text['Theme'],
         recipients=[user.mail],
-        body=f'<p>{code}</p>',
+        body=mail_text['description'].replace("(?code)", code),
         subtype=MessageType.html)
 
     await cache.set(f'{user.mail}_login', code)
@@ -103,6 +101,9 @@ async def login_auth(response: Response, user: UserActivateCode, cache: InMemory
             raise NoVerifyCode
     else:
         raise CodeExpire
+
+    if not user.is_active:
+        raise Forbidden
 
     token = manager.create_access_token(
         data=dict(sub=user_res.mail)

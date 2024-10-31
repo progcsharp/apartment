@@ -25,7 +25,7 @@ from routers.admin import router as admin_router
 app = FastAPI(debug=False)
 
 
-origins = ["http://37.140.198.195:8000"]
+origins = ["http://37.140.198.195:8000", "https://stayflex.vercel.app"]
 
 app.add_middleware(
     CORSMiddleware,

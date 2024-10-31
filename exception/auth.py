@@ -3,9 +3,9 @@ from starlette.status import HTTP_403_FORBIDDEN, HTTP_406_NOT_ACCEPTABLE
 
 
 class Forbidden(HTTPException):
-    def __init__(self) -> None:
+    def __init__(self, text="Access denied") -> None:
         self.status_code = HTTP_403_FORBIDDEN
-        self.detail = "Access denied"
+        self.detail = text
 
 
 class NoVerifyPWD(HTTPException):

@@ -147,11 +147,11 @@ async def get_all_convenience(session):
         result = await session.execute(query)
         conveniences = result.scalars().all()
 
-        # for convenience in conveniences:
-        #     query_object = select(func.count(Object.id)).where(Object.city_id == city.id)
-        #     result = await session.execute(query_object)
-        #     objects_count = result.scalar()
-        #     city.object_count = objects_count
+        for convenience in conveniences:
+            query_object = select(func.count(ObjectConvenience.convenience_id)).where(ObjectConvenience.convenience_id == convenience.id)
+            result = await session.execute(query_object)
+            objects_count = result.scalar()
+            convenience.object_count = objects_count
 
         return conveniences
 
@@ -255,7 +255,19 @@ async def get_client_by_phone(phone_client, session):
     return client
 
 
-async def get_client_by_id(user_id, session):
+async def get_client_by_id(client_id, session):
+    async with session() as session:
+        query = select(Client).where(Client.id == client_id)
+        result = await session.execute(query)
+        client = result.scalar_one_or_none()
+
+        if not client:
+            raise NotFoundedError
+
+    return client
+
+
+async def get_client_by_user_id(user_id, session):
     async with session() as session:
         query = select(Client).join(UserClient).filter(UserClient.user_id == user_id)
         result = await session.execute(query)

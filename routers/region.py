@@ -20,7 +20,7 @@ router = APIRouter(prefix="/region", responses={404: {"description": "Not found"
 
 
 @router.get("/all", response_model=RegionResponseList)
-async def get_all(db=Depends(get_db)):
+async def get_all(db=Depends(get_db), _=Depends(manager)):
     regions = await get_all_region(db)
     return {"regions": regions}
 

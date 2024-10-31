@@ -63,11 +63,17 @@ async def update_object_activate(object_data, user, session):
     return object
 
 
-async def update_object_by_id(object_data, convenience_and_removed_photos, files, session):
+async def update_object_by_id(object_data, convenience_and_removed_photos, files, session, user):
     async with session() as session:
-        query = select(Object).where(Object.id == object_data.id).options(selectinload(Object.city).subqueryload(City.region)).\
-            options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
-            options(selectinload(Object.conveniences))
+        if user.is_admin:
+            query = select(Object).where(Object.id == object_data.id).options(selectinload(Object.city).subqueryload(City.region)).\
+                options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
+                options(selectinload(Object.conveniences))
+        else:
+            query = select(Object).where(Object.id == object_data.id).where(Object.author_id==user.id).options(
+                selectinload(Object.city).subqueryload(City.region)). \
+                options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
+                options(selectinload(Object.conveniences))
         result = await session.execute(query)
         object = result.scalar_one_or_none()
 

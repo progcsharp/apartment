@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, Reservation, \
     Tariff
 from db.handler.update import calculate_end_date
+from exception.auth import Forbidden
 from exception.database import NotFoundedError
 from service.file import upload_file
 from service.security import hash_password
@@ -26,16 +27,16 @@ async def create_user(user_data, session):
         user_check_mail = result.scalar_one_or_none()
 
         if user_check_mail:
-            raise {"user": "пользователь с такой почтой существует"}
+            raise Forbidden("mail found")
 
         query = select(User).where(User.phone == user_data.phone)
         result = await session.execute(query)
         user_check_phone = result.scalar_one_or_none()
 
         if user_check_phone:
-            raise {"user": "пользователь с таким номером существует"}
+            raise Forbidden("phone found")
 
-        if user_data.tariff_id != 1:
+        if user_data.tariff_id > 0:
             query = select(Tariff).where(Tariff.id == user_data.tariff_id)
             result = await session.execute(query)
             tariff = result.scalar_one_or_none()

@@ -77,6 +77,7 @@ async def create(user_data: UserCreate, db=Depends(get_db), user_auth=Depends(ma
     if not await check_admin(user_auth):
         raise
     user = await create_user(user_data, db)
+    user.tariff = None
     return user
 
 #admin

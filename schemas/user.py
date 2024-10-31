@@ -29,7 +29,6 @@ class UserCreate(UserBase):
     phone: str
     password: str
     is_active: bool = False
-    is_verified: bool = False
     is_admin: bool = False
     balance: int = 0
     tariff_id: int = None

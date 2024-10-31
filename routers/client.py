@@ -4,7 +4,7 @@ from fastapi import APIRouter, Body, Depends
 
 from db.engine import get_db
 from db.handler.create import create_client
-from db.handler.get import get_all_client, get_client_by_id, get_client_by_phone
+from db.handler.get import get_all_client, get_client_by_phone, get_client_by_id
 from schemas.client import ClientCreate, ClientResponse
 from service.security import manager
 
@@ -26,6 +26,12 @@ async def all(db=Depends(get_db), user_auth=Depends(manager)):
 @router.get("/phone/{phone}", response_model=ClientResponse)
 async def get_by_user_id(phone: str, db=Depends(get_db), _=Depends(manager)):
     client = await get_client_by_phone(phone, db)
+    return client
+
+
+@router.get("/id/{client_id}", response_model=ClientResponse)
+async def get_by_id(client_id: str, db=Depends(get_db), _=Depends(manager)):
+    client = await get_client_by_id(client_id, db)
     return client
 
 

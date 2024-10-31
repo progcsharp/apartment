@@ -14,8 +14,9 @@ class ConvenienceResponse(ConvenienceBase):
     icon: str
 
 
-class ConvenienceResponseList(BaseModel):
-    convenience: List[ConvenienceResponse]
+class ConvenienceResponseList(ConvenienceBase):
+    icon: str
+    object_count: int
 
 
 class ConvenienceCreate(ConvenienceBase):

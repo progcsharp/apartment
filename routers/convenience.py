@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, UploadFile, File, Body
 
@@ -14,10 +14,10 @@ from service.security import manager
 router = APIRouter(prefix="/convenience", responses={404: {"description": "Not found"}})
 
 
-@router.get("/all", response_model=ConvenienceResponseList)
+@router.get("/all", response_model=List[ConvenienceResponseList])
 async def get_all(db=Depends(get_db), _=Depends(manager)):
     convenience = await get_all_convenience(db)
-    return {"convenience": convenience}
+    return convenience
 
 
 @router.get("/id/{convenience_id}", response_model=ConvenienceResponse)
