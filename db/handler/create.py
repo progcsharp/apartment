@@ -155,9 +155,14 @@ async def create_reservation(user_id, reservation_data, session):
 
 
         if await check_available_time(session, reservation_data.object_id, reservation_data.start_date, reservation_data.end_date):
-            client_user = UserClient(user_id=user_id, client_id=reservation_data.client_id)
+            query = select(UserClient).where(UserClient.user_id == user_id).where(UserClient.client_id == reservation_data.client_id)
+            result = await session.execute(query)
+            user_client = result.scalar_one_or_none()
 
-            session.add(client_user)
+            if not user_client:
+                client_user = UserClient(user_id=user_id, client_id=reservation_data.client_id)
+
+                session.add(client_user)
             session.add(reservation)
             await session.commit()
         else:

@@ -241,7 +241,7 @@ async def get_all_client(session, user):
             clients = result.scalars().all()
 
         for client in clients:
-            query_reservation = select(func.count(Reservation.client_id)).where(Reservation.client_id == client.id)
+            query_reservation = select(func.count(Reservation.client_id)).where(Reservation.client_id == client.id).where(Reservation.status != "rejected")
             result = await session.execute(query_reservation)
             reservation_count = result.scalar()
             client.reservation_count = reservation_count
