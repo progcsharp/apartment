@@ -1,7 +1,7 @@
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
-from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Reservation
+from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Reservation, Client, UserClient
 from exception.auth import Forbidden
 from exception.database import NotFoundedError, DependencyConflictError
 
@@ -151,3 +151,36 @@ async def delete_reservation(user, reservation_id, session):
         await session.commit()
 
     return "successful"
+
+
+async def client_delete(user, client_id, session):
+    async with session() as session:
+        if user.is_admin:
+            query = select(Client).where(Client.id == client_id).options(selectinload(Client.reservations))
+        else:
+            query = select(Client).where(Client.id == client_id).options(selectinload(Client.reservations)).join(UserClient).filter(UserClient.user_id == user.id)
+        result = await session.execute(query)
+        client = result.scalar_one_or_none()
+
+        if not client:
+            raise NotFoundedError
+
+        if not can_delete_client(client):
+            raise DependencyConflictError
+
+        await session.delete(client)
+
+        # Удаляем связующие записи
+        await session.execute(delete(UserClient).where(UserClient.client_id == client_id))
+        await session.execute(delete(Reservation).where(Reservation.client_id == client_id))
+
+        await session.commit()
+
+    return "successful"
+
+
+async def can_delete_client(client):
+    if not client.reservations:
+        return True
+
+    return all(reservation.status == "rejected" for reservation in client.reservations)

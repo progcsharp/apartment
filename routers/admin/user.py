@@ -29,8 +29,17 @@ async def get(user_id: int, db=Depends(get_db), user_auth=Depends(manager)):
 async def get_all(db=Depends(get_db), user_auth=Depends(manager)):
     if not await check_admin(user_auth):
         raise
-    user = await get_all_users(db)
+    user = await get_all_users(db, False)
     return user
+
+
+@router.get("/all/admin", response_model=List[UserResponseList])
+async def get_admins(db=Depends(get_db), user_auth=Depends(manager)):
+    if not await check_admin(user_auth):
+        raise
+    user = await get_all_users(db, True)
+    return user
+
 
 #admin
 @router.put("/activate", response_model=UserResponse)
@@ -45,7 +54,7 @@ async def activate(user_data: UserActivate,  db=Depends(get_db), user_auth=Depen
 async def tariff_active(user_data: UserTariffActivate, db=Depends(get_db), user_auth=Depends(manager)):
     if not await check_admin(user_auth):
         raise
-    user = await update_user_tariff_activate(user_data, db)
+    user = await update_user_tariff_activate(user_data.tariff_id, user_data.user_id, user_data.balance, db)
     return user
 
 #admin

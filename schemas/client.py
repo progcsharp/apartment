@@ -22,3 +22,8 @@ class ClientCreate(ClientBase):
 
 class ClientResponse(ClientBase):
     id: int
+
+
+class ClientResponseList(ClientBase):
+    id: int
+    reservation_count: int

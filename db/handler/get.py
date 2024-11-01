@@ -10,7 +10,7 @@ from service.security import manager
 
 async def get_user_by_id(id, session):
     async with session() as session:
-        query = select(User).where(User.id == id).where(User.is_admin==False).options(selectinload(User.tariff))
+        query = select(User).where(User.id == id).options(selectinload(User.tariff))
         result = await session.execute(query)
         user = result.scalar_one_or_none()
 
@@ -20,9 +20,9 @@ async def get_user_by_id(id, session):
     return user
 
 
-async def get_all_users(session):
+async def get_all_users(session, admin):
     async with session() as session:
-        query = select(User).where(User.is_admin==False).options(selectinload(User.tariff))
+        query = select(User).where(User.is_admin==admin).options(selectinload(User.tariff))
         result = await session.execute(query)
         users = result.scalars().all()
 
@@ -234,13 +234,19 @@ async def get_all_client(session, user):
         if not user.is_admin:
             query = select(Client).join(UserClient).filter(UserClient.user_id == user.id)
             result = await session.execute(query)
-            client = result.scalars().all()
+            clients = result.scalars().all()
         else:
             query = select(Client)
             result = await session.execute(query)
-            client = result.scalars().all()
+            clients = result.scalars().all()
 
-    return client
+        for client in clients:
+            query_reservation = select(func.count(Reservation.client_id)).where(Reservation.client_id == client.id)
+            result = await session.execute(query_reservation)
+            reservation_count = result.scalar()
+            client.reservation_count = reservation_count
+
+    return clients
 
 
 async def get_client_by_phone(phone_client, session):

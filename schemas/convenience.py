@@ -15,6 +15,7 @@ class ConvenienceResponse(ConvenienceBase):
 
 
 class ConvenienceResponseList(ConvenienceBase):
+    id: int
     icon: str
     object_count: int
 

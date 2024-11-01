@@ -7,13 +7,13 @@ from db.handler.create import create_client
 from db.handler.get import get_all_client, get_client_by_user_id, get_client_by_phone
 from exception.auth import Forbidden
 from permission.is_admin import check_admin
-from schemas.client import ClientCreate, ClientResponse
+from schemas.client import ClientCreate, ClientResponse, ClientResponseList
 from service.security import manager
 
 router = APIRouter(prefix="/client", responses={404: {"description": "Not found"}})
 
 
-@router.get("/all", response_model=List[ClientResponse])
+@router.get("/all", response_model=List[ClientResponseList])
 async def all(db=Depends(get_db), user_auth=Depends(manager)):
     if not await check_admin(user_auth):
         raise Forbidden
@@ -45,6 +45,6 @@ async def create(client_data: ClientCreate, user_auth=Depends(manager), db=Depen
     return client
 
 
-@router.delete("/delete")
-async def delete(id: int, db=Depends(get_db)):
-    pass
+# @router.delete("/delete")
+# async def delete(id: int, db=Depends(get_db)):
+#     pass

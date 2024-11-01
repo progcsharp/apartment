@@ -7,7 +7,7 @@ from config import mail_conf
 from db.engine import get_db
 from db.handler.create import create_tariff
 from db.handler.get import get_tariff_by_id, get_all_tariff
-from db.handler.update import update_tariff
+from db.handler.update import update_tariff, update_user_tariff_activate
 from schemas.tariff import TariffCreate, TariffResponse, TariffUpdate
 from service.security import manager
 
@@ -26,17 +26,20 @@ async def get(id: int, db=Depends(get_db), _=Depends(manager)):
     return tariff
 
 
-@router.post("id/")
+@router.put("/activate/{tariff_id}")
 async def activate_tariff(tariff_id: int = Body, db=Depends(get_db), user_auth=Depends(manager)):
     tariff = await get_tariff_by_id(tariff_id, db)
-    message = MessageSchema(
-        subject="Tariff",
-        recipients="fonror@mail.ru",
-        body=f"Пользователь с почтой {user_auth.mail} хочет подключить тариф {tariff.name}",
-        subtype=MessageType.html)
-    fm = FastMail(mail_conf)
-    await fm.send_message(message)
+    # message = MessageSchema(
+    #     subject="Tariff",
+    #     recipients="fonror@mail.ru",
+    #     body=f"Пользователь с почтой {user_auth.mail} хочет подключить тариф {tariff.name}",
+    #     subtype=MessageType.html)
+    # fm = FastMail(mail_conf)
+    # await fm.send_message(message)
 
+    await update_user_tariff_activate(tariff.id, user_auth.id, user_auth.balance, db)
+
+    return "ok"
 
 # @router.put("/update", response_model=TariffResponse)
 # async def update(tariff_data: TariffUpdate, db=Depends(get_db)):

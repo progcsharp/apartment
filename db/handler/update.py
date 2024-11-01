@@ -104,7 +104,7 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
 
         for convenience_id in create_array:
             oc = ObjectConvenience(object_id=object.id, convenience_id=convenience_id)
-            await session.add(oc)
+            session.add(oc)
 
 
 
@@ -197,13 +197,13 @@ async def update_reservation(user, reservation_data, session):
         return reservation
 
 
-async def update_user_tariff_activate(user_data, session):
+async def update_user_tariff_activate(tariff_id, user_id, balance, session):
     async with session() as session:
-        query = select(Tariff).where(Tariff.id == user_data.tariff_id)
+        query = select(Tariff).where(Tariff.id == tariff_id)
         result = await session.execute(query)
         tariff = result.scalar_one_or_none()
 
-        query = select(User).where(User.id == user_data.user_id)
+        query = select(User).where(User.id == user_id)
         result = await session.execute(query)
         user = result.scalar_one_or_none()
 
@@ -211,8 +211,8 @@ async def update_user_tariff_activate(user_data, session):
             raise NotFoundedError
 
         user.is_active = True
-        user.balance += user_data.balance
-        user.tariff_id = user_data.tariff_id
+        user.balance += balance
+        user.tariff_id = tariff_id
 
         end_tariff_data = await calculate_end_date(user.balance, tariff.daily_price)
         user.date_before = end_tariff_data

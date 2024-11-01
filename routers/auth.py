@@ -102,8 +102,8 @@ async def login_auth(response: Response, user: UserActivateCode, cache: InMemory
     else:
         raise CodeExpire
 
-    if not user.is_active:
-        raise Forbidden
+    # if not user_res.is_active:
+    #     raise Forbidden
 
     token = manager.create_access_token(
         data=dict(sub=user_res.mail)
