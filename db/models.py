@@ -109,6 +109,7 @@ class Object(Base):
     photos = Column(ARRAY(String))
     address = Column(Text)
     active = Column(Boolean, server_default="false")
+    letter = Column(Text)
 
     author = relationship("User", back_populates="objects")
     city = relationship("City", backref="objects")
@@ -164,6 +165,18 @@ class Reservation(Base):
     # Внешние ключи
     object = relationship("Object", back_populates="reservations")
     client = relationship("Client", back_populates="reservations")
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)
+
+
+class Server(Base):
+    __tablename__ = "server"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    container_name = Column(String, nullable=False, index=True)
 
     @classmethod
     def from_dict(cls, data):

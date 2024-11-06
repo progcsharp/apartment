@@ -273,3 +273,6 @@ CREATE TABLE "tariff" (
 
 ALTER TABLE user ADD CONSTRAINT unique_phone_mail UNIQUE (phone, mail);
 ALTER TABLE client ADD CONSTRAINT unique_client_phone_email UNIQUE (phone, email);
+ALTER TABLE object ADD COLUMN letter TEXT;
+UPDATE object SET letter = 'default_value' WHERE id IS NOT NULL;
+

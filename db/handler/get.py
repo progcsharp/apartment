@@ -2,7 +2,7 @@ from sqlalchemy import select, desc, func
 from sqlalchemy.orm import selectinload, aliased
 
 from db import make_session, User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, \
-    Reservation, Tariff
+    Reservation, Tariff, Server
 from exception.database import NotFoundedError
 from schemas.user import UserResponse
 from service.security import manager
@@ -377,6 +377,15 @@ async def get_all_tariff(session):
         tariffs = result.scalars().all()
 
     return tariffs
+
+
+async def get_all_server(session):
+    async with session() as session:
+        query = select(Server).order_by(Server.id)
+        result = await session.execute(query)
+        server = result.scalars().all()
+
+    return server
 
 
 # async def count_objects_in_region(session):

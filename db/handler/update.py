@@ -262,6 +262,8 @@ async def update_user(user_data, session):
 
 async def calculate_end_date(balance, price_per_day):
     # Вычисляем количество дней, которые можно использовать
+    if balance == None:
+        balance = 0
     days_to_use = balance // price_per_day
 
     # Добавляем полученное количество дней к текущей дате

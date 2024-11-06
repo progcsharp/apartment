@@ -50,6 +50,7 @@ class ObjectBase(BaseModel):
     prepayment_percentage: int
     address: str
     active: bool = False
+    letter: str = None
     #
     # author = relationship("User", back_populates="objects")
     # city = relationship("City", backref="objects")

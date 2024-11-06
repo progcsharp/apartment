@@ -165,7 +165,7 @@ async def client_delete(user, client_id, session):
         if not client:
             raise NotFoundedError
 
-        if not can_delete_client(client):
+        if not await can_delete_client(client):
             raise DependencyConflictError
 
         await session.delete(client)

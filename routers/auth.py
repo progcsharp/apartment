@@ -27,7 +27,7 @@ router = APIRouter(prefix="/auth", responses={404: {"description": "Not found"}}
 
 
 @router.post('/register', response_model=UserRegisterResponse)
-async def register(response: Response, user: UserRegister,
+async def register_user(response: Response, user: UserRegister,
                    db=Depends(get_db)):
     try:
         user_res = await create_user(user, db)
@@ -71,7 +71,7 @@ async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend
 
     if not await verify_password(password, user.password):
         raise NoVerifyPWD
-    code = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+    code = ''.join(map(str, random.sample(range(10), 5)))
     print(f"{code}_login")
     mail_text = authorization
     message = MessageSchema(
@@ -102,8 +102,8 @@ async def login_auth(response: Response, user: UserActivateCode, cache: InMemory
     else:
         raise CodeExpire
 
-    # if not user_res.is_active:
-    #     raise Forbidden
+    if not user_res.is_active:
+        raise Forbidden
 
     token = manager.create_access_token(
         data=dict(sub=user_res.mail)

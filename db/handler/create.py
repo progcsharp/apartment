@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, Reservation, \
-    Tariff
+    Tariff, Server
 from db.handler.update import calculate_end_date
 from exception.auth import Forbidden
 from exception.database import NotFoundedError
@@ -101,7 +101,7 @@ async def create_object(object_data, files, user_id, session):
                     area=object_data.area, room_count=object_data.room_count, adult_places=object_data.adult_places, child_places=object_data.child_places,
                     floor=object_data.floor, min_ded=object_data.min_ded,
                     prepayment_percentage=object_data.prepayment_percentage, photos=file_list,
-                    address=object_data.address)
+                    address=object_data.address, letter=object_data.letter)
 
     async with session() as session:
         session.add(object)
@@ -201,4 +201,11 @@ async def create_tariff(tariff_data, session):
 
     return new_tariff
 
+
+async def create_server(server_data, session):
+    server = Server.from_dict(server_data.__dict__)
+    async with session() as session:
+        session.add(server)
+        await session.commit()
+    return server
 
