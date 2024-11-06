@@ -5,7 +5,7 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 
 from config import mail_conf
-from db import User, Tariff, Object, Reservation, City, ObjectConvenience
+from db import User, Tariff, Object, Reservation, City, ObjectConvenience, Server
 from exception.auth import Forbidden
 from exception.database import NotFoundedError
 from service.file import delete_file, upload_file
@@ -298,3 +298,46 @@ async def update_tariff(tariff_data, session):
         await session.commit()
 
     return tariff
+
+
+async def update_server(server_data, session):
+    async with session() as session:
+        query = select(Server).where(Server.id == server_data.id)
+        result = await session.execute(query)
+        server = result.scalar_one_or_none()
+
+        if not server:
+            raise NotFoundedError
+
+
+        stmt = (
+            update(Server)
+            .where(Server.id == server_data.id)
+            .values(**dict(server_data))
+        )
+        await session.execute(stmt)
+        await session.commit()
+
+    return server
+
+
+async def server_activate(server_id, session):
+    async with session() as session:
+        query = select(Server).where(Server.default == True)
+        result = await session.execute(query)
+        current_default = result.scalar_one_or_none()
+
+        if current_default:
+            current_default.default = False
+
+        query = select(Server).where(Server.id == server_id)
+        result = await session.execute(query)
+        server = result.scalar_one_or_none()
+
+        server.default = True
+
+        await session.commit()
+
+        return server
+
+

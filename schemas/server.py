@@ -10,6 +10,7 @@ class ServerBase(BaseModel):
 
 class ServerResponse(ServerBase):
     id: int
+    default: bool
 
 
 class ServerCreate(ServerBase):
@@ -20,3 +21,15 @@ class ServerCreate(ServerBase):
         if isinstance(value, str):
             return cls(**json.loads(value))
         return value
+
+
+class ServerUpdate(ServerBase):
+    id: int
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_to_json(cls, value):
+        if isinstance(value, str):
+            return cls(**json.loads(value))
+        return value
+

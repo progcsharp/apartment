@@ -276,3 +276,6 @@ ALTER TABLE client ADD CONSTRAINT unique_client_phone_email UNIQUE (phone, email
 ALTER TABLE object ADD COLUMN letter TEXT;
 UPDATE object SET letter = 'default_value' WHERE id IS NOT NULL;
 
+ALTER TABLE server
+ADD COLUMN default BOOLEAN DEFAULT false;
+

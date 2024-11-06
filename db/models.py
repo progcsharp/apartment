@@ -177,6 +177,7 @@ class Server(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, index=True)
     container_name = Column(String, nullable=False, index=True)
+    default = Column(Boolean, nullable=True, default=False, server_default='false')
 
     @classmethod
     def from_dict(cls, data):
