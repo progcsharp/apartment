@@ -51,3 +51,13 @@ class ReservationUpdate(BaseModel):
     status: str
     letter: str
 
+
+class ClientData(BaseModel):
+    fullname: str
+    phone: str
+    email: str
+
+
+class ReservationData(ReservationBase):
+    object_id: int
+    description: str

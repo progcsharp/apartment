@@ -142,6 +142,10 @@ class Client(Base):
     user = relationship("User", secondary="client_user", back_populates="clients")
     reservations = relationship("Reservation", back_populates="client")
 
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)
+
 
 class UserClient(Base):
     __tablename__ = 'client_user'

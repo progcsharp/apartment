@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -8,7 +8,7 @@ from db import User, Region, City, Apartment, Convenience, Object, ObjectConveni
     Tariff, Server
 from db.handler.update import calculate_end_date
 from exception.auth import Forbidden
-from exception.database import NotFoundedError
+from exception.database import NotFoundedError, ReservationError
 from service.file import upload_file
 from service.security import hash_password
 
@@ -166,14 +166,63 @@ async def create_reservation(user_id, reservation_data, session):
             session.add(reservation)
             await session.commit()
         else:
-            raise
+            raise ReservationError
 
     return reservation
 
 
+async def client_reservation_create(client_data, reservation_data, session):
+    async with session() as session:
+
+        if not await check_available_time(session, object_id=reservation_data.object_id,
+                                          start_date=reservation_data.start_date, end_date=reservation_data.end_date):
+            raise ReservationError
+
+        query = select(Object).where(Object.id == reservation_data.object_id)
+        result = await session.execute(query)
+        object = result.scalar_one_or_none()
+
+        if not object:
+            raise NotFoundedError
+
+        query_client = select(Client).where(Client.phone == client_data.phone)
+        result = await session.execute(query_client)
+        client = result.scalar_one_or_none()
+
+        if client:
+            stmt = (
+                update(Client)
+                .where(Client.phone == client_data.phone)
+                .values(**dict(client_data))
+            )
+            await session.execute(stmt)
+        else:
+            client = Client.from_dict(client_data.__dict__)
+            session.add(client)
+
+        query_user_client = select(UserClient).\
+            where((UserClient.client_id == client.id) & (UserClient.user_id == object.author_id))
+        result = await session.execute(query_user_client)
+        user_client = result.scalar_one_or_none()
+
+        if not user_client:
+            client_user = UserClient(user_id=object.author_id, client_id=client.id)
+            session.add(client_user)
+
+        reservation_data.client_id = client.id
+        reservation_data.status = "new"
+        reservation_data.letter = object.letter
+
+        reservation = Reservation.from_dict(reservation_data.__dict__)
+        session.add(reservation)
+        await session.commit()
+
+        return reservation
+
+
 async def check_available_time(session: AsyncSession, object_id: int, start_date: date, end_date: date) -> bool:
     query = select(Reservation).where(
-        (Reservation.object_id == object_id) &
+        (Reservation.object_id == object_id) & (Reservation.status == 'approved') &
         ((Reservation.start_date < end_date) & (Reservation.end_date > start_date))
     ).execution_options(populate_existing=True)
 

@@ -1,14 +1,15 @@
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body
 
 from db.engine import get_db
-from db.handler.create import create_reservation
+from db.handler.create import create_reservation, client_reservation_create
 from db.handler.delete import delete_reservation
 from db.handler.get import get_reservation_by_object_id, get_reservation_by_user_id, get_reservation_by_id, \
     get_reservation_by_client_id, get_reservation_all
 from db.handler.update import update_reservation_status, update_reservation
-from schemas.reservation import ReservationCreate, ReservationResponse, ReservationUpdateStatus, ReservationUpdate
+from schemas.reservation import ReservationCreate, ReservationResponse, ReservationUpdateStatus, ReservationUpdate, \
+    ClientData, ReservationData
 from service.security import manager
 
 router = APIRouter(prefix="/reservation", responses={404: {"description": "Not found"}})
@@ -60,6 +61,12 @@ async def update(reservation_data: ReservationUpdate, user_auth=Depends(manager)
 @router.post("/create")
 async def create(reservation_data: ReservationCreate, user_auth=Depends(manager), db=Depends(get_db)):
     reservation = await create_reservation(user_auth.id, reservation_data, db)
+    return reservation
+
+
+@router.post('/create/client')
+async def create_client(client_data: ClientData, reservation_data: ReservationData, db=Depends(get_db)):
+    reservation = await client_reservation_create(client_data=client_data, reservation_data=reservation_data, session=db)
     return reservation
 
 

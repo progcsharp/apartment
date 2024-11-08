@@ -12,3 +12,9 @@ class DependencyConflictError(HTTPException):
     def __init__(self) -> None:
         self.status_code = HTTP_409_CONFLICT
         self.detail = "dependency conflict"
+
+
+class ReservationError(HTTPException):
+    def __init__(self) -> None:
+        self.status_code = HTTP_409_CONFLICT
+        self.detail = "date is busy"
