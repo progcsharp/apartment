@@ -11,29 +11,9 @@ from db.handler.delete import delete_object
 from db.handler.get import get_all_object, get_by_id_object, get_object_by_user_id, get_by_id_object_by_user
 from db.handler.update import update_object_activate, update_object_by_id
 from schemas.object import ObjectCreate, ObjectResponse, ObjectActivate, ObjectUpdate, ObjectUpdatePhotosConvenience
-from service.file import generate_unique_filename, check_for_duplicates, upload_file
 from service.security import manager
 
 router = APIRouter(prefix="/object", responses={404: {"description": "Not found"}})
-
-
-# @router.get("/test")
-# async def test(db=Depends(get_db)):
-#     arr1 = [1, 3]
-#     arr2 = [1, 3, 4]
-#     set1 = set(arr1)
-#
-#     # Создаем множество из arr2
-#     set2 = set(arr2)
-#
-#     # Вычитаем set2 из set1 для получения уникальных элементов arr1
-#     unique_ids = list(set1 - set2)
-#
-#     # Вычитаем set1 из set2 для получения новых идентификаторов
-#     new_ids = list(set2 - set1)
-#
-#     # Объединяем результаты
-#     return unique_ids, new_ids
 
 
 @router.get("/all", response_model=List[ObjectResponse])

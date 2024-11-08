@@ -1,7 +1,8 @@
 from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
-from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Reservation, Client, UserClient
+from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Reservation, Client, UserClient, \
+    Server
 from exception.auth import Forbidden
 from exception.database import NotFoundedError, DependencyConflictError
 
@@ -184,3 +185,18 @@ async def can_delete_client(client):
         return True
 
     return all(reservation.status == "rejected" for reservation in client.reservations)
+
+
+async def server_delete(server_id, session):
+    async with session() as session:
+        quety = select(Server).where(Server.id == server_id)
+        result = await session.execute(quety)
+        server = result.scalar_one_or_none()
+
+        if not server:
+            raise NotFoundedError
+
+        await session.delete(server)
+        await session.commit()
+
+        return "successful"

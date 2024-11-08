@@ -21,7 +21,6 @@ from routers.client import router as client_router
 from routers.reservation import router as reservation_router
 from routers.tariff import router as tariff_router
 from routers.admin import router as admin_router
-from routers.server import router as server_router
 
 app = FastAPI(debug=False)
 
@@ -46,7 +45,6 @@ app.include_router(router=apartment_router)
 app.include_router(router=convenience_router)
 app.include_router(router=object_router)
 app.include_router(router=client_router)
-app.include_router(router=server_router)
 app.include_router(router=reservation_router)
 app.include_router(router=admin_router)
 

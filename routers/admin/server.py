@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from db.engine import get_db
 from db.handler.create import create_server
+from db.handler.delete import server_delete
 from db.handler.get import get_all_server
 from db.handler.update import update_server, server_activate
 from exception.auth import Forbidden
@@ -30,7 +31,7 @@ async def update(data_server: ServerUpdate, db=Depends(get_db), user_auth=Depend
     return server
 
 
-@router.put("/activate")
+@router.put("/activate/{server_id}")
 async def activate(server_id: int, db=Depends(get_db), user_auth=Depends(manager)):
     if not await check_admin(user_auth):
         raise Forbidden
@@ -44,3 +45,9 @@ async def create(data_server: ServerCreate, db=Depends(get_db), user_auth=Depend
         raise Forbidden
     servers = await create_server(data_server, db)
     return servers
+
+
+@router.delete('/delete/{server_id}')
+async def delete(server_id: int, db=Depends(get_db)):
+    server = await server_delete(server_id, db)
+    return server
