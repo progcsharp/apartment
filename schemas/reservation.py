@@ -57,7 +57,13 @@ class ClientData(BaseModel):
     phone: str
     email: str
 
+    class Config:
+        extra = "allow"
+
 
 class ReservationData(ReservationBase):
     object_id: int
     description: str
+
+    class Config:
+        extra = "allow"

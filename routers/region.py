@@ -10,24 +10,15 @@ from service.security import manager
 router = APIRouter(prefix="/region", responses={404: {"description": "Not found"}})
 
 
-# @router.get("/test")
-# async def get_all(db=Depends(get_db)):
-#     regions = await count_objects_in_region(db)
-#     print(regions)
-#     for region in regions:
-#         print(region[0].name, region[1])
-#     return "regions"
-
-
 @router.get("/all", response_model=RegionResponseList)
 async def get_all(db=Depends(get_db), _=Depends(manager)):
     regions = await get_all_region(db)
     return {"regions": regions}
 
 
-@router.get('/id/', response_model=RegionResponse)
-async def get_one(id: int, db=Depends(get_db), _=Depends(manager)):
-    region = await get_region_by_id(id, db)
+@router.get('/id/{region_id}', response_model=RegionResponse)
+async def get_one(region_id: int, db=Depends(get_db), _=Depends(manager)):
+    region = await get_region_by_id(region_id, db)
     return region
 
 

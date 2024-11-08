@@ -48,16 +48,17 @@ async def create_user(user_data, session):
 
         session.add(user)
         await session.commit()
-
+        await session.close()
     return user
 
 
 async def create_region(region_data, session):
-    region = Region(name=region_data.name)
+    region = Region(name=region_data.name, server_id=region_data.server_id)
 
     async with session() as session:
         session.add(region)
         await session.commit()
+        await session.close()
     return region
 
 
@@ -69,6 +70,7 @@ async def create_city(city_data, session):
         await session.commit()
         region = await session.execute(select(Region).where(Region.id == city_data.region_id))
         city.region = region.scalar_one_or_none()
+        await session.close()
     return city
 
 
@@ -78,6 +80,7 @@ async def create_apartment(apartment_data, session):
     async with session() as session:
         session.add(apartment)
         await session.commit()
+        await session.close()
     return apartment
 
 
@@ -88,24 +91,31 @@ async def create_convenience(convenience_data, session):
     async with session() as session:
         session.add(convenience)
         await session.commit()
-
+        await session.close()
     return convenience
 
 
 async def create_object(object_data, files, user_id, session):
-    # file_list = await save_file_list(files)
-    file_list = upload_file(files)
-
-    object = Object(name=object_data.name, author_id=user_id, city_id=object_data.city_id,
-                    apartment_id=object_data.apartment_id, description=object_data.description, price=object_data.price,
-                    area=object_data.area, room_count=object_data.room_count, adult_places=object_data.adult_places, child_places=object_data.child_places,
-                    floor=object_data.floor, min_ded=object_data.min_ded,
-                    prepayment_percentage=object_data.prepayment_percentage, photos=file_list,
-                    address=object_data.address, letter=object_data.letter)
-
     async with session() as session:
+        query_city = select(City).options(selectinload(City.region).subqueryload(Region.servers))
+        result = await session.execute(query_city)
+        city = result.scalar_one_or_none()
+
+        file_list = upload_file(files, city.region.servers.container_name, city.region.servers.link)
+
+        object = Object(name=object_data.name, author_id=user_id, city_id=object_data.city_id,
+                        apartment_id=object_data.apartment_id, description=object_data.description,
+                        price=object_data.price,
+                        area=object_data.area, room_count=object_data.room_count, adult_places=object_data.adult_places,
+                        child_places=object_data.child_places,
+                        floor=object_data.floor, min_ded=object_data.min_ded,
+                        prepayment_percentage=object_data.prepayment_percentage, photos=file_list,
+                        address=object_data.address, letter=object_data.letter)
+
         session.add(object)
         await session.commit()
+
+
 
         for convenience_id in object_data.convenience:
             object_convenience = ObjectConvenience(object_id=object.id, convenience_id=convenience_id)
@@ -117,6 +127,8 @@ async def create_object(object_data, files, user_id, session):
             options(selectinload(Object.conveniences))
         result = await session.execute(query)
         object = result.scalar_one_or_none()
+
+        await session.close()
 
     return object
 
@@ -135,10 +147,7 @@ async def create_client(client_data, session, user_id=None):
             if not user:
                 raise NotFoundedError
         await session.commit()
-        #
-        # query = select(Client).where(Client.id == client.id)
-        # result = await session.execute(query)
-        # client = result.scalar_one_or_none()
+        await session.close()
     return client
 
 
@@ -168,6 +177,7 @@ async def create_reservation(user_id, reservation_data, session):
         else:
             raise ReservationError
 
+        await session.close()
     return reservation
 
 
@@ -200,6 +210,8 @@ async def client_reservation_create(client_data, reservation_data, session):
             client = Client.from_dict(client_data.__dict__)
             session.add(client)
 
+        await session.commit()
+
         query_user_client = select(UserClient).\
             where((UserClient.client_id == client.id) & (UserClient.user_id == object.author_id))
         result = await session.execute(query_user_client)
@@ -209,14 +221,13 @@ async def client_reservation_create(client_data, reservation_data, session):
             client_user = UserClient(user_id=object.author_id, client_id=client.id)
             session.add(client_user)
 
-        reservation_data.client_id = client.id
-        reservation_data.status = "new"
-        reservation_data.letter = object.letter
-
         reservation = Reservation.from_dict(reservation_data.__dict__)
+        reservation.client_id = client.id
+        reservation.status = "new"
+        reservation.letter = object.letter
         session.add(reservation)
         await session.commit()
-
+        await session.close()
         return reservation
 
 
@@ -247,7 +258,7 @@ async def create_tariff(tariff_data, session):
     async with session() as session:
         session.add(new_tariff)
         await session.commit()
-
+        await session.close()
     return new_tariff
 
 
@@ -256,5 +267,6 @@ async def create_server(server_data, session):
     async with session() as session:
         session.add(server)
         await session.commit()
+        await session.close()
     return server
 

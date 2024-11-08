@@ -58,7 +58,9 @@ class Region(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(Text, nullable=False)
+    server_id = Column(Integer, ForeignKey('server.id'), nullable=False)
 
+    servers = relationship("Server", back_populates="regions")
     cities = relationship("City", back_populates="region")
 
 
@@ -182,6 +184,9 @@ class Server(Base):
     name = Column(String, nullable=False, index=True)
     container_name = Column(String, nullable=False, index=True)
     default = Column(Boolean, nullable=True, default=False, server_default='false')
+    link = Column(Text, nullable=False, index=True)
+
+    regions = relationship("Region", back_populates="servers")
 
     @classmethod
     def from_dict(cls, data):

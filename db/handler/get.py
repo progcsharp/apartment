@@ -50,7 +50,7 @@ async def get_user(mail, session):
 
 async def get_all_region(session):
     async with session() as session:
-        query = select(Region).options(selectinload(Region.cities))
+        query = select(Region).options(selectinload(Region.cities)).options(selectinload(Region.servers))
         result = await session.execute(query)
         regions = result.scalars().all()
 
@@ -64,7 +64,8 @@ async def get_all_region(session):
 
 async def get_region_by_id(id, session):
     async with session() as session:
-        query = select(Region).where(Region.id == id).options(selectinload(Region.cities))
+        query = select(Region).where(Region.id == id).options(selectinload(Region.cities)).\
+            options(selectinload(Region.servers))
         result = await session.execute(query)
         region = result.scalar_one_or_none()
 
@@ -215,6 +216,7 @@ async def get_by_id_object_by_user(object_id, session):
         if not object:
             raise NotFoundedError
 
+        await session.close()
     return object
 
 
@@ -226,6 +228,8 @@ async def get_object_by_user_id(user_id, user, session):
                 options(selectinload(Object.conveniences))
         result = await session.execute(query)
         objects = result.scalars().all()
+
+        await session.close()
     return objects
 
 
@@ -246,6 +250,7 @@ async def get_all_client(session, user):
             reservation_count = result.scalar()
             client.reservation_count = reservation_count
 
+        await session.close()
     return clients
 
 
@@ -258,6 +263,7 @@ async def get_client_by_phone(phone_client, session):
         if not client:
             raise NotFoundedError
 
+        await session.close()
     return client
 
 
@@ -270,6 +276,7 @@ async def get_client_by_id(client_id, session):
         if not client:
             raise NotFoundedError
 
+        await session.close()
     return client
 
 
@@ -279,6 +286,7 @@ async def get_client_by_user_id(user_id, session):
         result = await session.execute(query)
         client = result.scalars().all()
 
+        await session.close()
     return client
 
 
@@ -293,6 +301,7 @@ async def get_reservation_all(user, session):
         result = await session.execute(query)
         reservation = result.scalars().all()
 
+        await session.close()
     return reservation
 
 
@@ -309,6 +318,7 @@ async def get_reservation_by_object_id(user, object_id, session):
         result = await session.execute(query)
         reservation = result.scalars().all()
 
+        await session.close()
     return reservation
 
 
@@ -326,6 +336,7 @@ async def get_reservation_by_client_id(user, client_id, session):
         result = await session.execute(query)
         reservation = result.scalars().all()
 
+        await session.close()
     return reservation
 
 
@@ -336,6 +347,7 @@ async def get_reservation_by_user_id(user_id, session):
         result = await session.execute(query)
         reservation = result.scalars().all()
 
+        await session.close()
     return reservation
 
 
@@ -355,6 +367,7 @@ async def get_reservation_by_id(user, reservation_id, session):
         if not reservation:
             raise NotFoundedError
 
+        await session.close()
     return reservation
 
 
@@ -367,6 +380,7 @@ async def get_tariff_by_id(id, session):
         if not tariff:
             raise NotFoundedError
 
+        await session.close()
     return tariff
 
 
@@ -376,6 +390,7 @@ async def get_all_tariff(session):
         result = await session.execute(query)
         tariffs = result.scalars().all()
 
+        await session.close()
     return tariffs
 
 
@@ -385,6 +400,7 @@ async def get_all_server(session):
         result = await session.execute(query)
         server = result.scalars().all()
 
+        await session.close()
     return server
 
 

@@ -24,6 +24,7 @@ async def delete_user(id, session):
 
         await session.delete(user)
         await session.commit()
+        await session.close()
     return "successful"
 
 
@@ -42,6 +43,7 @@ async def delete_region(id, session):
 
         await session.delete(region)
         await session.commit()
+        await session.close()
     return "successful"
 
 
@@ -60,6 +62,7 @@ async def delete_city(id, session):
 
         await session.delete(city)
         await session.commit()
+        await session.close()
     return "successful"
 
 
@@ -79,6 +82,7 @@ async def delete_apartment(id, session):
 
         await session.delete(apartment)
         await session.commit()
+        await session.close()
     return "successful"
 
 
@@ -98,6 +102,7 @@ async def delete_convenience(id, session):
 
         await session.delete(convenience)
         await session.commit()
+        await session.close()
 
     return "successful"
 
@@ -131,6 +136,7 @@ async def delete_object(object_id, user, session):
 
         await session.delete(object)
         await session.commit()
+        await session.close()
 
     return "successful"
 
@@ -150,6 +156,7 @@ async def delete_reservation(user, reservation_id, session):
 
         await session.delete(reservation)
         await session.commit()
+        await session.close()
 
     return "successful"
 
@@ -176,6 +183,7 @@ async def client_delete(user, client_id, session):
         await session.execute(delete(Reservation).where(Reservation.client_id == client_id))
 
         await session.commit()
+        await session.close()
 
     return "successful"
 
@@ -198,5 +206,6 @@ async def server_delete(server_id, session):
 
         await session.delete(server)
         await session.commit()
+        await session.close()
 
         return "successful"

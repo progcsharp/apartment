@@ -5,7 +5,7 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 
 from config import mail_conf
-from db import User, Tariff, Object, Reservation, City, ObjectConvenience, Server
+from db import User, Tariff, Object, Reservation, City, ObjectConvenience, Server, Region
 from exception.auth import Forbidden
 from exception.database import NotFoundedError
 from service.file import delete_file, upload_file
@@ -25,6 +25,8 @@ async def update_user_verified(mail, session):
         # session.add(user)
         await session.commit()
         user.tariff = None
+
+        await session.close()
     return user
 
 
@@ -40,6 +42,7 @@ async def update_user_activate(user_data,  session):
         user.is_active = not user.is_active
         # session.add(user)
         await session.commit()
+        await session.close()
     return user
 
 
@@ -60,6 +63,7 @@ async def update_object_activate(object_data, user, session):
         object.active = not object.active
         # session.add(object)
         await session.commit()
+        await session.close()
     return object
 
 
@@ -71,7 +75,7 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
                 options(selectinload(Object.conveniences))
         else:
             query = select(Object).where(Object.id == object_data.id).where(Object.author_id==user.id).options(
-                selectinload(Object.city).subqueryload(City.region)). \
+                selectinload(Object.city).subqueryload(City.region).subqueryload(Region.servers)). \
                 options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
                 options(selectinload(Object.conveniences))
         result = await session.execute(query)
@@ -86,7 +90,7 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
 
         delete_file(convenience_and_removed_photos.removed_photos)
         if files:
-            urls = upload_file(files)
+            urls = upload_file(files, object.city.region.servers.container_name, object.city.region.servers.link)
             photos.extend(urls)
             object.photos = photos
 
@@ -116,7 +120,7 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
 
         await session.execute(stmt)
         await session.commit()
-
+        await session.close()
         return object
 
 
@@ -167,6 +171,7 @@ async def update_reservation_status(reservation_data, user, session):
             fm = FastMail(mail_conf)
             await fm.send_message(message)
         await session.commit()
+        await session.close()
     return reservation
 
 
@@ -193,7 +198,7 @@ async def update_reservation(user, reservation_data, session):
 
         await session.execute(stmt)
         await session.commit()
-
+        await session.close()
         return reservation
 
 
@@ -220,7 +225,7 @@ async def update_user_tariff_activate(tariff_id, user_id, balance, session):
         # session.add(user)
         user.tariff = tariff
         await session.commit()
-
+        await session.close()
     return user
 
 
@@ -237,6 +242,9 @@ async def update_user_password(user_data, user_id, session):
         user.password = password
 
         await session.commit()
+        await session.close()
+
+    return user
 
 
 async def update_user(user_data, session):
@@ -256,6 +264,7 @@ async def update_user(user_data, session):
 
         await session.execute(stmt)
         await session.commit()
+        await session.close()
 
     return user
 
@@ -296,6 +305,7 @@ async def update_tariff(tariff_data, session):
         # session.add(tariff)
         await session.execute(stmt)
         await session.commit()
+        await session.close()
 
     return tariff
 
@@ -317,6 +327,7 @@ async def update_server(server_data, session):
         )
         await session.execute(stmt)
         await session.commit()
+        await session.close()
 
     return server
 
@@ -337,6 +348,7 @@ async def server_activate(server_id, session):
         server.default = True
 
         await session.commit()
+        await session.close()
 
         return server
 

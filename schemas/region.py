@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from pydantic import BaseModel
 
@@ -8,10 +8,15 @@ class RegionBase(BaseModel):
 
 
 class RegionCreate(RegionBase):
-    pass
+    server_id: int
 
 
 class CityInRegion(BaseModel):
+    id: int
+    name: str
+
+
+class Server(BaseModel):
     id: int
     name: str
 
@@ -21,6 +26,7 @@ class RegionResponse(BaseModel):
     name: str
     cities: List[CityInRegion] = []
     object_count: int
+    servers: Union[Server, None]
 
 
 class RegionCreateResponse(BaseModel):

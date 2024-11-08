@@ -27,13 +27,13 @@ def check_for_duplicates(file_hash: str) -> bool:
     return file_hash not in existing_hashes
 
 
-def upload_file(files):
+def upload_file(files, bucket_name, link):
     urls = []
     for file in files:
         name = generate_unique_filename(file.filename)
         if check_for_duplicates(str(name)):
-            print(s3_client.put_object(Body=file.file, Bucket="stayflex", Key=name))
-            url = f"https://b95b2fa5-a84e-458c-9dcd-0f6142437182.selstorage.ru/{name}"
+            print(s3_client.put_object(Body=file.file, Bucket=bucket_name, Key=name))
+            url = f"{link}{name}"
             urls.append(url)
     return urls
 

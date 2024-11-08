@@ -271,6 +271,14 @@ CREATE TABLE "tariff" (
     icon TEXT
 );
 
+CREATE TABLE "server" (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    container_name VARCHAR(255) NOT NULL,
+    "default" BOOLEAN DEFAULT false
+);
+
+
 ALTER TABLE user ADD CONSTRAINT unique_phone_mail UNIQUE (phone, mail);
 ALTER TABLE client ADD CONSTRAINT unique_client_phone_email UNIQUE (phone, email);
 ALTER TABLE object ADD COLUMN letter TEXT;
@@ -279,3 +287,5 @@ UPDATE object SET letter = 'default_value' WHERE id IS NOT NULL;
 ALTER TABLE server
 ADD COLUMN default BOOLEAN DEFAULT false;
 
+ALTER TABLE "region" ADD COLUMN server_id INTEGER;
+ALTER TABLE server ADD COLUMN link TEXT;
