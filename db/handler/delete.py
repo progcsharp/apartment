@@ -163,36 +163,78 @@ async def delete_reservation(user, reservation_id, session):
 
 async def client_delete(user, client_id, session):
     async with session() as session:
+        # if user.is_admin:
+        #     query = select(Client).where(Client.id == client_id).options(selectinload(Client.reservations))
+        # else:
+        #     query = select(Client).where(Client.id == client_id).options(selectinload(Client.reservations)).join(UserClient).filter(UserClient.user_id == user.id)
+        # result = await session.execute(query)
+        # client = result.scalar_one_or_none()
+        #
+        # if not client:
+        #     raise NotFoundedError
+        #
+        # if not await can_delete_client(client):
+        #     raise DependencyConflictError
+        #
+        # await session.delete(client)
+        #
+        # # Удаляем связующие записи
+        # await session.execute(delete(UserClient).where(UserClient.client_id == client_id))
+        # await session.execute(delete(Reservation).where(Reservation.client_id == client_id))
+        #
+        # await session.commit()
+        # await session.close()
+
+        query = select(Client).where(Client.id == client_id)
         if user.is_admin:
-            query = select(Client).where(Client.id == client_id).options(selectinload(Client.reservations))
-        else:
-            query = select(Client).where(Client.id == client_id).options(selectinload(Client.reservations)).join(UserClient).filter(UserClient.user_id == user.id)
+            result = await session.execute(query)
+            client = result.scalar_one_or_none()
+
+            if not client:
+                raise NotFoundedError
+
+            if not await can_delete_client(client, user, session):
+                raise DependencyConflictError
+
+            await session.delete(client)
+
+            # Удаляем связующие записи
+            await session.execute(delete(UserClient).where(UserClient.client_id == client_id))
+            await session.execute(delete(Reservation).where(Reservation.client_id == client_id))
+            await session.commit()
+            await session.close()
+
+            return "successful"
+        query = query.join(UserClient).filter(UserClient.user_id == user.id)
         result = await session.execute(query)
         client = result.scalar_one_or_none()
 
         if not client:
             raise NotFoundedError
 
-        if not await can_delete_client(client):
+        if not await can_delete_client(client, user, session):
             raise DependencyConflictError
 
-        await session.delete(client)
-
-        # Удаляем связующие записи
         await session.execute(delete(UserClient).where(UserClient.client_id == client_id))
         await session.execute(delete(Reservation).where(Reservation.client_id == client_id))
-
         await session.commit()
         await session.close()
 
-    return "successful"
+        return "successful"
 
 
-async def can_delete_client(client):
-    if not client.reservations:
+async def can_delete_client(client, user, session):
+    if user.is_admin:
+        query = select(Reservation).where(Reservation.client_id == client.id)
+    else:
+        query = select(Reservation).where(Reservation.client_id == client.id).join(Object).filter(Object.author_id == user.id)
+    result = await session.execute(query)
+    reservations = result.scalar_one_or_none()
+
+    if not reservations:
         return True
 
-    return all(reservation.status == "rejected" for reservation in client.reservations)
+    return all(reservation.status == "rejected" for reservation in reservations)
 
 
 async def server_delete(server_id, session):
@@ -209,9 +251,9 @@ async def server_delete(server_id, session):
 
         query_region = select(Region).where(Region.server_id == server_id)
         result = await session.execute(query_region)
-        server = result.scalars()
+        region = result.scalars()
 
-        if not server:
+        if not region:
             raise DependencyConflictError
 
         await session.delete(server)

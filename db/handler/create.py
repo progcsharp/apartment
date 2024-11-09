@@ -290,5 +290,5 @@ async def create_client_user(client_id, user_id, session):
         client_user = UserClient(user_id=user_id, client_id=client_id)
         session.add(client_user)
         await session.commit()
-        await session.close
+        await session.close()
     return client

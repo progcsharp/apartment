@@ -24,3 +24,7 @@ async def check_available_time(session: AsyncSession, object_id: int, start_date
                 return False
 
     return True
+
+
+def filter_approved_reservations(reservations):
+    return [reservation for reservation in reservations if reservation.status == "approved"]

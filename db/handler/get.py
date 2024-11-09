@@ -1,8 +1,9 @@
-from sqlalchemy import select, desc, func
+from sqlalchemy import select, desc, func, and_
 from sqlalchemy.orm import selectinload, aliased
 
 from db import make_session, User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, \
     Reservation, Tariff, Server
+from db.handler.validate import filter_approved_reservations
 from exception.database import NotFoundedError
 from schemas.user import UserResponse
 from service.security import manager
@@ -201,13 +202,15 @@ async def get_by_id_object_by_user(object_id, session):
         query = select(Object).where(Object.id == object_id).options(
             selectinload(Object.city).subqueryload(City.region)). \
             options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
-            options(selectinload(Object.conveniences))
+            options(selectinload(Object.conveniences)).options(selectinload(Object.reservations))
         # else:
         #     query = select(Object).where(Object.id == object_id).where(Object.author_id == user.id).options(selectinload(Object.city).subqueryload(City.region)).\
         #         options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
         #         options(selectinload(Object.conveniences))
         result = await session.execute(query)
         object = result.scalar_one_or_none()
+
+        object.reservations = filter_approved_reservations(object.reservations)
 
         if not object:
             raise NotFoundedError
@@ -241,7 +244,12 @@ async def get_all_client(session, user):
             clients = result.scalars().all()
 
         for client in clients:
-            query_reservation = select(func.count(Reservation.client_id)).where(Reservation.client_id == client.id).where(Reservation.status != "rejected")
+            if not user.is_admin:
+                query_reservation = select(func.count(Reservation.client_id)).where(Reservation.client_id == client.id).\
+                    where(Reservation.status != "rejected").join(Object).filter(Object.author_id == user.id)
+            else:
+                query_reservation = select(func.count(Reservation.client_id)).where(Reservation.client_id == client.id). \
+                    where(Reservation.status != "rejected")
             result = await session.execute(query_reservation)
             reservation_count = result.scalar()
             client.reservation_count = reservation_count

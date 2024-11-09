@@ -22,7 +22,7 @@ async def get_all(db=Depends(get_db), user_auth=Depends(manager)):
     return objects
 
 
-@router.get("/id/{object_id}", response_model=ObjectResponse)
+@router.get("/id/{object_id}")
 async def get(object_id: int, db=Depends(get_db)):
     objects = await get_by_id_object_by_user(object_id, db)
     return objects

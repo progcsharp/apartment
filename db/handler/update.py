@@ -199,7 +199,7 @@ async def update_reservation(user, reservation_data, session):
         if not reservation:
             raise NotFoundedError
 
-        if reservation_data.status == "approved":
+        if reservation_data.status == "approved" and reservation.status != "approved":
             if not await check_available_time(session, reservation_data.object_id,
                                               reservation_data.start_date, reservation_data.end_date):
                 raise ReservationError
