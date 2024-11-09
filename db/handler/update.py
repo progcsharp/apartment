@@ -6,8 +6,9 @@ from sqlalchemy.orm import selectinload
 
 from config import mail_conf
 from db import User, Tariff, Object, Reservation, City, ObjectConvenience, Server, Region
+from db.handler import check_available_time
 from exception.auth import Forbidden
-from exception.database import NotFoundedError
+from exception.database import NotFoundedError, ReservationError
 from service.file import delete_file, upload_file
 from service.security import hash_password
 
@@ -75,7 +76,7 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
                 options(selectinload(Object.conveniences))
         else:
             query = select(Object).where(Object.id == object_data.id).where(Object.author_id==user.id).options(
-                selectinload(Object.city).subqueryload(City.region).subqueryload(Region.servers)). \
+                selectinload(Object.city).subqueryload(City.region)). \
                 options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
                 options(selectinload(Object.conveniences))
         result = await session.execute(query)
@@ -90,7 +91,10 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
 
         delete_file(convenience_and_removed_photos.removed_photos)
         if files:
-            urls = upload_file(files, object.city.region.servers.container_name, object.city.region.servers.link)
+            query_server = select(Server).join(Region).filter(Region.id == object.city.region.id)
+            result = await session.execute(query_server)
+            server = result.scalar_one_or_none()
+            urls = upload_file(files, server.container_name, server.link)
             photos.extend(urls)
             object.photos = photos
 
@@ -157,6 +161,11 @@ async def update_reservation_status(reservation_data, user, session):
         if not reservation:
             raise NotFoundedError
 
+        if reservation_data.status == "approved":
+            if not await check_available_time(session, reservation.object_id,
+                                              reservation.start_date, reservation.end_date):
+                raise ReservationError
+
         reservation.status = reservation_data.status
 
         # session.add(reservation)
@@ -189,6 +198,11 @@ async def update_reservation(user, reservation_data, session):
 
         if not reservation:
             raise NotFoundedError
+
+        if reservation_data.status == "approved":
+            if not await check_available_time(session, reservation_data.object_id,
+                                              reservation_data.start_date, reservation_data.end_date):
+                raise ReservationError
 
         stmt = (
             update(Reservation)

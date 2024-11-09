@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Body, Depends
 
 from db.engine import get_db
-from db.handler.create import create_client
+from db.handler.create import create_client, create_client_user
 from db.handler.delete import client_delete
 from db.handler.get import get_all_client, get_client_by_phone, get_client_by_id
 from schemas.client import ClientCreate, ClientResponse, ClientResponseList
@@ -33,6 +33,12 @@ async def get_by_user_id(phone: str, db=Depends(get_db), _=Depends(manager)):
 @router.get("/id/{client_id}", response_model=ClientResponse)
 async def get_by_id(client_id: int, db=Depends(get_db), _=Depends(manager)):
     client = await get_client_by_id(client_id, db)
+    return client
+
+
+@router.put("/save/{client_id}")
+async def save_client(client_id: int, auth_user=Depends(manager), db=Depends(get_db)):
+    client = await create_client_user(client_id, auth_user.id, db)
     return client
 
 

@@ -92,7 +92,7 @@ async def login_auth(response: Response, user: UserActivateCode, cache: InMemory
                      db=Depends(get_db)):
     user_res = await get_user(user.mail, db)
     if not user_res:
-        return JSONResponse(status_code=200, content={"user": "not found"})
+        return InvalidCredentialsException
     code = await cache.get(f'{user.mail}_login')
     if code:
         if code == user.code:

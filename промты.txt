@@ -289,3 +289,6 @@ ADD COLUMN default BOOLEAN DEFAULT false;
 
 ALTER TABLE "region" ADD COLUMN server_id INTEGER;
 ALTER TABLE server ADD COLUMN link TEXT;
+
+ALTER TABLE reservation
+ADD COLUMN guest_count INT;

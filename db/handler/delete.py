@@ -4,7 +4,7 @@ from sqlalchemy.orm import selectinload
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Reservation, Client, UserClient, \
     Server
 from exception.auth import Forbidden
-from exception.database import NotFoundedError, DependencyConflictError
+from exception.database import NotFoundedError, DependencyConflictError, ErrorDeleteServer
 
 
 async def delete_user(id, session):
@@ -197,12 +197,22 @@ async def can_delete_client(client):
 
 async def server_delete(server_id, session):
     async with session() as session:
-        quety = select(Server).where(Server.id == server_id)
-        result = await session.execute(quety)
+        query = select(Server).where(Server.id == server_id)
+        result = await session.execute(query)
         server = result.scalar_one_or_none()
 
         if not server:
             raise NotFoundedError
+
+        if server.default:
+            raise ErrorDeleteServer
+
+        query_region = select(Region).where(Region.server_id == server_id)
+        result = await session.execute(query_region)
+        server = result.scalars()
+
+        if not server:
+            raise DependencyConflictError
 
         await session.delete(server)
         await session.commit()

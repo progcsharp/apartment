@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, Reservation, \
     Tariff, Server
+from db.handler import check_available_time
 from db.handler.update import calculate_end_date
 from exception.auth import Forbidden
 from exception.database import NotFoundedError, ReservationError
@@ -97,7 +98,8 @@ async def create_convenience(convenience_data, session):
 
 async def create_object(object_data, files, user_id, session):
     async with session() as session:
-        query_city = select(City).options(selectinload(City.region).subqueryload(Region.servers))
+        query_city = select(City).options(selectinload(City.region).subqueryload(Region.servers)).\
+            where(City.id == object_data.city_id)
         result = await session.execute(query_city)
         city = result.scalar_one_or_none()
 
@@ -139,14 +141,18 @@ async def create_client(client_data, session, user_id=None):
 
     async with session() as session:
         session.add(client)
-        if not user_id:
+        await session.commit()
+        if user_id:
             query = select(User).where(User.id == user_id)
             result = await session.execute(query)
             user = result.scalar_one_or_none()
 
             if not user:
                 raise NotFoundedError
-        await session.commit()
+
+            user_client = UserClient(user_id=user.id, client_id=client.id)
+            session.add(user_client)
+            await session.commit()
         await session.close()
     return client
 
@@ -208,6 +214,7 @@ async def client_reservation_create(client_data, reservation_data, session):
             await session.execute(stmt)
         else:
             client = Client.from_dict(client_data.__dict__)
+            client.reiting = 0
             session.add(client)
 
         await session.commit()
@@ -270,3 +277,18 @@ async def create_server(server_data, session):
         await session.close()
     return server
 
+
+async def create_client_user(client_id, user_id, session):
+    async with session() as session:
+        query = select(Client).where(Client.id == client_id)
+        result = await session.execute(query)
+        client = result.scalar_one_or_none()
+
+        if not client:
+            raise NotFoundedError
+
+        client_user = UserClient(user_id=user_id, client_id=client_id)
+        session.add(client_user)
+        await session.commit()
+        await session.close
+    return client

@@ -26,6 +26,7 @@ class ReservationCreate(ReservationBase):
     description: str
     status: str = "new"
     letter: str
+    guest_count: int
 
 
 class ReservationResponse(ReservationBase):
@@ -35,6 +36,7 @@ class ReservationResponse(ReservationBase):
     client: Client
     object: Object
     letter: str
+    guest_count: int
 
 
 class ReservationUpdateStatus(BaseModel):
@@ -50,6 +52,7 @@ class ReservationUpdate(BaseModel):
     description: str
     status: str
     letter: str
+    guest_count: int
 
 
 class ClientData(BaseModel):
@@ -57,13 +60,8 @@ class ClientData(BaseModel):
     phone: str
     email: str
 
-    class Config:
-        extra = "allow"
-
 
 class ReservationData(ReservationBase):
     object_id: int
     description: str
-
-    class Config:
-        extra = "allow"
+    guest_count: int

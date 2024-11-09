@@ -16,7 +16,7 @@ from service.security import manager
 router = APIRouter(prefix="/object", responses={404: {"description": "Not found"}})
 
 
-@router.get("/all", response_model=List[ObjectResponse])
+@router.get("/all")
 async def get_all(db=Depends(get_db), user_auth=Depends(manager)):
     objects = await get_all_object(user=user_auth, session=db)
     return objects

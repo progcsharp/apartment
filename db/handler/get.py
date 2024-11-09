@@ -41,10 +41,6 @@ async def get_user(mail, session):
         result = await session.execute(query)
         user = result.scalar_one_or_none()
 
-        if not user:
-            print(f"Пользователь с email {mail} не найден.")
-            raise NotFoundedError
-
         return user
 
 
