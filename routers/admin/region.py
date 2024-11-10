@@ -17,7 +17,7 @@ async def create(region_data: RegionCreate, user_auth=Depends(manager), db=Depen
     if not await check_admin(user_auth):
         raise Forbidden
 
-    region = await create_region(region_data, db)
+    region = await create_region(region_data, db, user_auth)
     return region
 
 
@@ -27,6 +27,6 @@ async def delete(region_id: int, user_auth=Depends(manager), db=Depends(get_db))
     if not await check_admin(user_auth):
         raise Forbidden
 
-    await delete_region(region_id, db)
+    await delete_region(region_id, db, u)
 
     return "successful"

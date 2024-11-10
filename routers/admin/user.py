@@ -86,7 +86,7 @@ async def update(user_data: UserUpdateAdmin, db=Depends(get_db), user_auth=Depen
 async def create(user_data: UserCreate, db=Depends(get_db), user_auth=Depends(manager)):
     if not await check_admin(user_auth):
         raise Forbidden
-    user = await create_user(user_data, db)
+    user = await create_user(user_data, db, user_auth)
     user.tariff = None
     return user
 

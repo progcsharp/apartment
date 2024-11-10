@@ -2,7 +2,7 @@ from sqlalchemy import select, desc, func, and_
 from sqlalchemy.orm import selectinload, aliased
 
 from db import make_session, User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, \
-    Reservation, Tariff, Server
+    Reservation, Tariff, Server, Log
 from db.handler.validate import filter_approved_reservations
 from exception.database import NotFoundedError
 from schemas.user import UserResponse
@@ -171,11 +171,11 @@ async def get_all_object(user, session):
         if user.is_admin:
             query = select(Object).options(selectinload(Object.city).subqueryload(City.region)).\
                 options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
-                options(selectinload(Object.conveniences))
+                options(selectinload(Object.conveniences)).options(selectinload(Object.approve_reservation))
         else:
             query = select(Object).where(Object.author_id == user.id).options(selectinload(Object.city).subqueryload(City.region)). \
                 options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
-                options(selectinload(Object.conveniences))
+                options(selectinload(Object.conveniences)).options(selectinload(Object.approve_reservation))
         result = await session.execute(query)
         object = result.scalars().all()
 
@@ -219,12 +219,12 @@ async def get_by_id_object_by_user(object_id, session):
     return object
 
 
-async def get_object_by_user_id(user_id, user, session):
+async def get_object_by_user_id(user_id, session):
     async with session() as session:
-        if user.is_admin:
-            query = select(Object).where(Object.author_id==user_id).options(selectinload(Object.city).subqueryload(City.region)).\
-                options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
-                options(selectinload(Object.conveniences))
+        # if user.is_admin:
+        query = select(Object).where(Object.author_id==user_id).options(selectinload(Object.city).subqueryload(City.region)).\
+            options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
+            options(selectinload(Object.conveniences)).options(selectinload(Object.approve_reservation))
         result = await session.execute(query)
         objects = result.scalars().all()
 
@@ -406,6 +406,16 @@ async def get_all_server(session):
 
         await session.close()
     return server
+
+
+async def get_logs(session):
+    async with session() as session:
+        query = select(Log).options(selectinload(Log.user))
+        result = await session.execute(query)
+        logs = result.scalars().all()
+
+        await session.close()
+    return logs
 
 
 # async def count_objects_in_region(session):

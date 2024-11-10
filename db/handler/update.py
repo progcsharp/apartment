@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 from config import mail_conf
 from db import User, Tariff, Object, Reservation, City, ObjectConvenience, Server, Region
 from db.handler import check_available_time
+from db.handler.create import create_logs
 from exception.auth import Forbidden
 from exception.database import NotFoundedError, ReservationError
 from service.file import delete_file, upload_file
@@ -199,10 +200,11 @@ async def update_reservation(user, reservation_data, session):
         if not reservation:
             raise NotFoundedError
 
-        if reservation_data.status == "approved" and reservation.status != "approved":
-            if not await check_available_time(session, reservation_data.object_id,
-                                              reservation_data.start_date, reservation_data.end_date):
-                raise ReservationError
+        if reservation_data.status == "approved":
+            if reservation_data.status != reservation.status:
+                if not await check_available_time(session, reservation_data.object_id,
+                                                  reservation_data.start_date, reservation_data.end_date):
+                    raise ReservationError
 
         stmt = (
             update(Reservation)
@@ -239,6 +241,7 @@ async def update_user_tariff_activate(tariff_id, user_id, balance, session):
         # session.add(user)
         user.tariff = tariff
         await session.commit()
+        await create_logs(session, user, f"сменил тариф на {tariff.name}")
         await session.close()
     return user
 

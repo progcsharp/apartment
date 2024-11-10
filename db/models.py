@@ -1,7 +1,9 @@
+from datetime import datetime
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, \
     Integer, String, Boolean, ForeignKey, \
-    MetaData, Text, Date, ARRAY, Float, VARCHAR
+    MetaData, Text, Date, ARRAY, Float, VARCHAR, DateTime
 # Pay attentions if you use another DB like Oracle, MySQL etc.
 # This types implement for specific dialect
 
@@ -34,6 +36,7 @@ class User(Base):
     clients = relationship("Client", secondary="client_user", back_populates="user")
     objects = relationship("Object", back_populates="author")
     tariff = relationship("Tariff", back_populates="users")
+    logs = relationship("Log", back_populates="user")
 
     @classmethod
     def from_dict(cls, data):
@@ -192,3 +195,15 @@ class Server(Base):
     @classmethod
     def from_dict(cls, data):
         return cls(**data)
+
+
+class Log(Base):
+    __tablename__ = "logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    description = Column(Text)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+    # Связь обратно к таблице User
+    user = relationship("User", back_populates="logs")

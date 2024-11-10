@@ -279,6 +279,13 @@ CREATE TABLE "server" (
 );
 
 
+CREATE TABLE logs (
+  id SERIAL PRIMARY KEY,
+  user_id INT,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 ALTER TABLE user ADD CONSTRAINT unique_phone_mail UNIQUE (phone, mail);
 ALTER TABLE client ADD CONSTRAINT unique_client_phone_email UNIQUE (phone, email);
 ALTER TABLE object ADD COLUMN letter TEXT;

@@ -38,7 +38,7 @@ async def get(user_id: int, user_auth=Depends(manager), db=Depends(get_db)):
     if not await check_admin(user_auth):
         raise Forbidden
 
-    objects = await get_object_by_user_id(user_id, user_auth, db)
+    objects = await get_object_by_user_id(user_id, db)
     return objects
 
 

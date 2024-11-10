@@ -16,7 +16,7 @@ async def create(city_data: CityCreate, user_auth=Depends(manager), db=Depends(g
     if not await check_admin(user_auth):
         raise Forbidden
 
-    city = await create_city(city_data, db)
+    city = await create_city(city_data, db, user_auth)
     return city
 
 

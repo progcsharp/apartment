@@ -10,30 +10,31 @@ from db.handler.create import create_object
 from db.handler.delete import delete_object
 from db.handler.get import get_all_object, get_by_id_object, get_object_by_user_id, get_by_id_object_by_user
 from db.handler.update import update_object_activate, update_object_by_id
-from schemas.object import ObjectCreate, ObjectResponse, ObjectActivate, ObjectUpdate, ObjectUpdatePhotosConvenience
+from schemas.object import ObjectCreate, ObjectResponse, ObjectActivate, ObjectUpdate, ObjectUpdatePhotosConvenience, \
+    PublicObject
 from service.security import manager
 
 router = APIRouter(prefix="/object", responses={404: {"description": "Not found"}})
 
 
-@router.get("/all")
+@router.get("/all", response_model=List[ObjectResponse])
 async def get_all(db=Depends(get_db), user_auth=Depends(manager)):
     objects = await get_all_object(user=user_auth, session=db)
     return objects
 
 
-@router.get("/id/{object_id}", response_model=ObjectResponse)
+@router.get("/id/{object_id}", response_model=PublicObject)
 async def get(object_id: int, db=Depends(get_db)):
     objects = await get_by_id_object_by_user(object_id, db)
     return objects
 
 
-# @router.get("/userid/{user_id}", response_model=List[ObjectResponse])
-# async def get(user_id: int, db=Depends(get_db)):
-#     objects = await get_object_by_user_id(user_id, db)
-#     if objects is None:
-#         raise
-#     return objects
+@router.get("/userid/{user_id}", response_model=List[PublicObject])
+async def get(user_id: int, db=Depends(get_db)):
+    objects = await get_object_by_user_id(user_id, db)
+    if objects is None:
+        raise
+    return objects
 
 
 @router.put("/activate", response_model=ObjectResponse)

@@ -5,6 +5,18 @@ from typing import List, Union
 from pydantic import BaseModel, model_validator
 
 
+def remove_field(field_name: str):
+    def decorator(cls):
+        cls._remove_field = field_name
+        return cls
+    return decorator
+
+    @classmethod
+    def _remove_field(cls):
+        if hasattr(cls(), cls._remove_field):
+            delattr(cls(), cls._remove_field)
+
+
 class Photo(BaseModel):
     url: str
 
@@ -15,6 +27,7 @@ class Region(BaseModel):
 
 
 class Reservation(BaseModel):
+    id: int
     start_date: date
     end_date: date
 
@@ -56,7 +69,6 @@ class ObjectBase(BaseModel):
     prepayment_percentage: int
     address: str
     active: bool = False
-    letter: str = None
     #
     # author = relationship("User", back_populates="objects")
     # city = relationship("City", backref="objects")
@@ -72,6 +84,12 @@ class ObjectResponse(ObjectBase):
     apartment: Apartment
     author: Author
     conveniences: List[Convenience]
+    letter: str = None
+
+
+
+@remove_field('letter')
+class PublicObject(ObjectResponse):
     approve_reservation: Union[List[Reservation], None]
 
 
@@ -79,6 +97,7 @@ class ObjectUpdate(ObjectBase):
     id: int
     city_id: int
     apartment_id: int
+    letter: str = None
 
     @model_validator(mode='before')
     @classmethod
@@ -104,6 +123,7 @@ class ObjectCreate(ObjectBase):
     city_id: int
     apartment_id: int
     convenience: List[int]
+    letter: str = None
 
     @model_validator(mode='before')
     @classmethod

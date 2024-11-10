@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, Reservation, \
-    Tariff, Server
+    Tariff, Server, Log
 from db.handler import check_available_time
 from db.handler.update import calculate_end_date
 from exception.auth import Forbidden
@@ -14,7 +14,7 @@ from service.file import upload_file
 from service.security import hash_password
 
 
-async def create_user(user_data, session):
+async def create_user(user_data, session, admin = None):
     password = await hash_password(user_data.password)
     user_data.password = password
     # user = User(fullname=user_data.fullname, mail=user_data.mail, phone=user_data.phone, password=password,
@@ -49,21 +49,27 @@ async def create_user(user_data, session):
 
         session.add(user)
         await session.commit()
+        if admin:
+            await create_logs(session, admin, f"админ создал пользователя id:{user.id}, mail:{user.mail}, phone:{user.phone}")
+        else:
+            await create_logs(session, user, f"пользователь зарегестрировался")
         await session.close()
     return user
 
 
-async def create_region(region_data, session):
+async def create_region(region_data, session, admin):
     region = Region(name=region_data.name, server_id=region_data.server_id)
 
     async with session() as session:
         session.add(region)
         await session.commit()
+        await create_logs(session, admin, f"админ создал регион {region.name}")
         await session.close()
+
     return region
 
 
-async def create_city(city_data, session):
+async def create_city(city_data, session, admin):
     city = City(name=city_data.name, region_id=city_data.region_id)
 
     async with session() as session:
@@ -71,7 +77,9 @@ async def create_city(city_data, session):
         await session.commit()
         region = await session.execute(select(Region).where(Region.id == city_data.region_id))
         city.region = region.scalar_one_or_none()
+        await create_logs(session, admin, f"админ создал город {city.name}")
         await session.close()
+
     return city
 
 
@@ -167,7 +175,6 @@ async def create_reservation(user_id, reservation_data, session):
             raise NotFoundedError
 
         reservation = Reservation.from_dict(reservation_data.__dict__)
-
 
         if await check_available_time(session, reservation_data.object_id, reservation_data.start_date, reservation_data.end_date):
             query = select(UserClient).where(UserClient.user_id == user_id).where(UserClient.client_id == reservation_data.client_id)
@@ -292,3 +299,9 @@ async def create_client_user(client_id, user_id, session):
         await session.commit()
         await session.close()
     return client
+
+
+async def create_logs(session, user, description):
+    log = Log(user_id=user.id, description=description)
+    session.add(log)
+    await session.commit()
