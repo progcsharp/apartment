@@ -8,6 +8,7 @@ from config import mail_conf
 from db import User, Tariff, Object, Reservation, City, ObjectConvenience, Server, Region
 from db.handler import check_available_time
 from db.handler.create import create_logs
+from db.handler.validate import calculate_end_date
 from exception.auth import Forbidden
 from exception.database import NotFoundedError, ReservationError
 from service.file import delete_file, upload_file
@@ -286,16 +287,16 @@ async def update_user(user_data, session):
     return user
 
 
-async def calculate_end_date(balance, price_per_day):
-    # Вычисляем количество дней, которые можно использовать
-    if balance == None:
-        balance = 0
-    days_to_use = balance // price_per_day
-
-    # Добавляем полученное количество дней к текущей дате
-    end_date = date.today() + timedelta(days=days_to_use)
-
-    return end_date
+# async def calculate_end_date(balance, price_per_day):
+#     # Вычисляем количество дней, которые можно использовать
+#     if balance == None:
+#         balance = 0
+#     days_to_use = balance // price_per_day
+#
+#     # Добавляем полученное количество дней к текущей дате
+#     end_date = date.today() + timedelta(days=days_to_use)
+#
+#     return end_date
 
 
 async def update_tariff(tariff_data, session):

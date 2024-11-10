@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, Reservation, \
     Tariff, Server, Log
 from db.handler import check_available_time
-from db.handler.update import calculate_end_date
+from db.handler.validate import calculate_end_date
 from exception.auth import Forbidden
 from exception.database import NotFoundedError, ReservationError
 from service.file import upload_file

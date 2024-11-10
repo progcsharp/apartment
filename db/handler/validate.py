@@ -28,3 +28,15 @@ async def check_available_time(session: AsyncSession, object_id: int, start_date
 
 def filter_approved_reservations(reservations):
     return [reservation for reservation in reservations if reservation.status == "approved"]
+
+
+async def calculate_end_date(balance, price_per_day):
+    # Вычисляем количество дней, которые можно использовать
+    if balance == None:
+        balance = 0
+    days_to_use = balance // price_per_day
+
+    # Добавляем полученное количество дней к текущей дате
+    end_date = date.today() + timedelta(days=days_to_use)
+
+    return end_date
