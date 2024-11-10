@@ -251,9 +251,9 @@ async def server_delete(server_id, session):
 
         query_region = select(Region).where(Region.server_id == server_id)
         result = await session.execute(query_region)
-        region = result.scalars()
+        region = result.scalars().all()
 
-        if not region:
+        if region:
             raise DependencyConflictError
 
         await session.delete(server)

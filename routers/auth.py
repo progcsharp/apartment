@@ -23,7 +23,9 @@ router = APIRouter(prefix="/auth", responses={404: {"description": "Not found"}}
 
 # @router.get('')
 # async def get_test(response: Response, cache: InMemoryCacheBackend = Depends(redis_cache), db = Depends(get_db)):
-#     raise NotFoundedError
+#     if []:
+#         return True
+#     return False
 
 
 @router.post('/register', response_model=UserRegisterResponse)

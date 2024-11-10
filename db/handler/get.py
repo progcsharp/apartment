@@ -202,7 +202,7 @@ async def get_by_id_object_by_user(object_id, session):
         query = select(Object).where(Object.id == object_id).options(
             selectinload(Object.city).subqueryload(City.region)). \
             options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
-            options(selectinload(Object.conveniences)).options(selectinload(Object.reservations))
+            options(selectinload(Object.conveniences)).options(selectinload(Object.approve_reservation))
         # else:
         #     query = select(Object).where(Object.id == object_id).where(Object.author_id == user.id).options(selectinload(Object.city).subqueryload(City.region)).\
         #         options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
@@ -210,7 +210,7 @@ async def get_by_id_object_by_user(object_id, session):
         result = await session.execute(query)
         object = result.scalar_one_or_none()
 
-        object.reservations = filter_approved_reservations(object.reservations)
+        object.approve_reservation = filter_approved_reservations(object.approve_reservation)
 
         if not object:
             raise NotFoundedError

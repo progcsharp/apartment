@@ -6,6 +6,7 @@ from pydantic import BaseModel, model_validator
 class ServerBase(BaseModel):
     name: str
     container_name: str
+    link: str
 
 
 class ServerResponse(ServerBase):

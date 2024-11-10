@@ -1,5 +1,6 @@
 import json
-from typing import List
+from datetime import date
+from typing import List, Union
 
 from pydantic import BaseModel, model_validator
 
@@ -11,6 +12,11 @@ class Photo(BaseModel):
 class Region(BaseModel):
     id: int
     name: str
+
+
+class Reservation(BaseModel):
+    start_date: date
+    end_date: date
 
 
 class City(BaseModel):
@@ -66,6 +72,7 @@ class ObjectResponse(ObjectBase):
     apartment: Apartment
     author: Author
     conveniences: List[Convenience]
+    approve_reservation: Union[List[Reservation], None]
 
 
 class ObjectUpdate(ObjectBase):

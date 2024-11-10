@@ -120,7 +120,7 @@ class Object(Base):
     # conveniences = relationship("ObjectConvenience", backref="convenience")
     conveniences = relationship("Convenience", secondary="object_convenience", back_populates="objects")
 
-    reservations = relationship("Reservation", back_populates="object")
+    approve_reservation = relationship("Reservation", back_populates="object")
 
 
 class ObjectConvenience(Base):
@@ -170,7 +170,7 @@ class Reservation(Base):
     letter = Column(Text)
 
     # Внешние ключи
-    object = relationship("Object", back_populates="reservations")
+    object = relationship("Object", back_populates="approve_reservation")
     client = relationship("Client", back_populates="reservations")
 
     @classmethod
