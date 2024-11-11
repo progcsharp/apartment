@@ -16,7 +16,7 @@ async def create(apartment_data: ApartmentCreate, user_auth=Depends(manager), db
     if not await check_admin(user_auth):
         raise Forbidden
 
-    apartment = await create_apartment(apartment_data, db)
+    apartment = await create_apartment(apartment_data, db, user_auth)
     return apartment
 
 
@@ -25,5 +25,5 @@ async def delete(apartment_id: int, user_auth=Depends(manager), db=Depends(get_d
     if not await check_admin(user_auth):
         raise Forbidden
 
-    await delete_apartment(apartment_id, db)
+    await delete_apartment(apartment_id, db, user_auth.id)
     return "successful"

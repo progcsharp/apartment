@@ -3,11 +3,12 @@ from sqlalchemy.orm import selectinload
 
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Reservation, Client, UserClient, \
     Server
+from db.handler.create import create_logs
 from exception.auth import Forbidden
 from exception.database import NotFoundedError, DependencyConflictError, ErrorDeleteServer
 
 
-async def delete_user(id, session):
+async def delete_user(id, session, admin_id):
     async with session() as session:
         query = select(User).where(User.id == id).options(selectinload(User.objects).
                                                           options(selectinload(Object.reservations)))
@@ -24,11 +25,12 @@ async def delete_user(id, session):
 
         await session.delete(user)
         await session.commit()
+        await create_logs(session, admin_id, f"Пользователь удален: почта {user.mail}")
         await session.close()
     return "successful"
 
 
-async def delete_region(id, session):
+async def delete_region(id, session, admin_id):
     async with session() as session:
         query = select(City).where(City.region_id==id)
         result = await session.execute(query)
@@ -43,11 +45,12 @@ async def delete_region(id, session):
 
         await session.delete(region)
         await session.commit()
+        await create_logs(session, admin_id, f"Удален регион {region.name}")
         await session.close()
     return "successful"
 
 
-async def delete_city(id, session):
+async def delete_city(id, session, admin_id):
     async with session() as session:
         query = select(Object).where(Object.city_id == id)
         result = await session.execute(query)
@@ -62,11 +65,12 @@ async def delete_city(id, session):
 
         await session.delete(city)
         await session.commit()
+        await create_logs(session, admin_id, f"Удален город {city.name}")
         await session.close()
     return "successful"
 
 
-async def delete_apartment(id, session):
+async def delete_apartment(id, session, admin_id):
     async with session() as session:
         query = select(Object).where(Object.apartment_id == id)
         result = await session.execute(query)
@@ -82,11 +86,12 @@ async def delete_apartment(id, session):
 
         await session.delete(apartment)
         await session.commit()
+        await create_logs(session, admin_id, f"Удален тип недвижимости {apartment.name}")
         await session.close()
     return "successful"
 
 
-async def delete_convenience(id, session):
+async def delete_convenience(id, session, admin_id):
     async with session() as session:
         query = select(ObjectConvenience).where(ObjectConvenience.convenience_id == id)
         result = await session.execute(query)
@@ -102,6 +107,7 @@ async def delete_convenience(id, session):
 
         await session.delete(convenience)
         await session.commit()
+        await create_logs(session, admin_id, f"удалено удобство {convenience.name}")
         await session.close()
 
     return "successful"
@@ -136,6 +142,10 @@ async def delete_object(object_id, user, session):
 
         await session.delete(object)
         await session.commit()
+        if user.is_admin:
+            await create_logs(session, user.id, f"админ удалил объект {object.name} пользователя {object.author_id}")
+        else:
+            await create_logs(session, user.id, f"Удален объект {object.name}")
         await session.close()
 
     return "successful"
@@ -156,6 +166,10 @@ async def delete_reservation(user, reservation_id, session):
 
         await session.delete(reservation)
         await session.commit()
+        if user.is_admin:
+            await create_logs(session, user.id, f"Админ удалил бронь объекта {reservation.object_id}")
+        else:
+            await create_logs(session, user.id, f"Удалена броль объекта {reservation.object_id}")
         await session.close()
 
     return "successful"
@@ -202,6 +216,7 @@ async def client_delete(user, client_id, session):
             await session.execute(delete(UserClient).where(UserClient.client_id == client_id))
             await session.execute(delete(Reservation).where(Reservation.client_id == client_id))
             await session.commit()
+            await create_logs(session, user.id, f"Админ удалил клиента {client.phone}")
             await session.close()
 
             return "successful"
@@ -218,6 +233,7 @@ async def client_delete(user, client_id, session):
         await session.execute(delete(UserClient).where(UserClient.client_id == client_id))
         await session.execute(delete(Reservation).where(Reservation.client_id == client_id))
         await session.commit()
+        await create_logs(session, user.id, f"Удалена клиента {client.id} и пользователя {user.id}")
         await session.close()
 
         return "successful"
@@ -237,7 +253,7 @@ async def can_delete_client(client, user, session):
     return all(reservation.status == "rejected" for reservation in reservations)
 
 
-async def server_delete(server_id, session):
+async def server_delete(server_id, session, admin_id):
     async with session() as session:
         query = select(Server).where(Server.id == server_id)
         result = await session.execute(query)
@@ -258,6 +274,8 @@ async def server_delete(server_id, session):
 
         await session.delete(server)
         await session.commit()
+
+        await create_logs(session, admin_id, f"Удален сервер {server.name}")
         await session.close()
 
         return "successful"

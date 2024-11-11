@@ -47,7 +47,7 @@ async def activate(object_id: ObjectActivate, user_auth=Depends(manager), db=Dep
     if not await check_admin(user_auth):
         raise Forbidden
 
-    user = await update_object_activate(object_id, db)
+    user = await update_object_activate(object_id, user_auth, db)
     return user
 
 
@@ -66,5 +66,5 @@ async def delete(object_id: int, db=Depends(get_db), user_auth=Depends(manager))
     if not await check_admin(user_auth):
         raise Forbidden
 
-    object_delete = await delete_object(object_id, db)
+    object_delete = await delete_object(object_id, user_auth, db)
     return object_delete

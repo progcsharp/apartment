@@ -27,7 +27,7 @@ async def all(db=Depends(get_db), user_auth=Depends(manager),):
 async def update(data_server: ServerUpdate, db=Depends(get_db), user_auth=Depends(manager)):
     if not await check_admin(user_auth):
         raise Forbidden
-    server = await update_server(data_server, db)
+    server = await update_server(data_server, db, user_auth.id)
     return server
 
 
@@ -35,7 +35,7 @@ async def update(data_server: ServerUpdate, db=Depends(get_db), user_auth=Depend
 async def activate(server_id: int, db=Depends(get_db), user_auth=Depends(manager)):
     if not await check_admin(user_auth):
         raise Forbidden
-    server = await server_activate(server_id, db)
+    server = await server_activate(server_id, db, user_auth.id)
     return server
 
 
@@ -43,11 +43,13 @@ async def activate(server_id: int, db=Depends(get_db), user_auth=Depends(manager
 async def create(data_server: ServerCreate, db=Depends(get_db), user_auth=Depends(manager),):
     if not await check_admin(user_auth):
         raise Forbidden
-    servers = await create_server(data_server, db)
+    servers = await create_server(data_server, db, user_auth.id)
     return servers
 
 
 @router.delete('/delete/{server_id}')
-async def delete(server_id: int, db=Depends(get_db)):
-    server = await server_delete(server_id, db)
+async def delete(server_id: int, db=Depends(get_db), user_auth=Depends(manager)):
+    if not await check_admin(user_auth):
+        raise Forbidden
+    server = await server_delete(server_id, db, user_auth.id)
     return server

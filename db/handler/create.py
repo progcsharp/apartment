@@ -50,9 +50,9 @@ async def create_user(user_data, session, admin = None):
         session.add(user)
         await session.commit()
         if admin:
-            await create_logs(session, admin, f"админ создал пользователя id:{user.id}, mail:{user.mail}, phone:{user.phone}")
+            await create_logs(session, admin.id, f"админ создал пользователя id:{user.id}, mail:{user.mail}, phone:{user.phone}")
         else:
-            await create_logs(session, user, f"пользователь зарегестрировался")
+            await create_logs(session, user.id, f"пользователь зарегестрировался")
         await session.close()
     return user
 
@@ -63,7 +63,7 @@ async def create_region(region_data, session, admin):
     async with session() as session:
         session.add(region)
         await session.commit()
-        await create_logs(session, admin, f"админ создал регион {region.name}")
+        await create_logs(session, admin.id, f"админ создал регион {region.name}")
         await session.close()
 
     return region
@@ -77,29 +77,31 @@ async def create_city(city_data, session, admin):
         await session.commit()
         region = await session.execute(select(Region).where(Region.id == city_data.region_id))
         city.region = region.scalar_one_or_none()
-        await create_logs(session, admin, f"админ создал город {city.name}")
+        await create_logs(session, admin.id, f"админ создал город {city.name}")
         await session.close()
 
     return city
 
 
-async def create_apartment(apartment_data, session):
+async def create_apartment(apartment_data, session, admin):
     apartment = Apartment(name=apartment_data.name)
 
     async with session() as session:
         session.add(apartment)
         await session.commit()
+        await create_logs(session, admin.id, f"админ создал тип недвижимости {apartment.name}")
         await session.close()
     return apartment
 
 
-async def create_convenience(convenience_data, session):
+async def create_convenience(convenience_data, session, admin):
 
     convenience = Convenience(name=convenience_data.name, icon=convenience_data.icon)
 
     async with session() as session:
         session.add(convenience)
         await session.commit()
+        await create_logs(session, admin.id, f"админ создал удобство {convenience.name}")
         await session.close()
     return convenience
 
@@ -138,6 +140,8 @@ async def create_object(object_data, files, user_id, session):
         result = await session.execute(query)
         object = result.scalar_one_or_none()
 
+        await create_logs(session, user_id, f"Создал объект {object.id}")
+
         await session.close()
 
     return object
@@ -161,6 +165,7 @@ async def create_client(client_data, session, user_id=None):
             user_client = UserClient(user_id=user.id, client_id=client.id)
             session.add(user_client)
             await session.commit()
+            await create_logs(session, user_id, f"Создан клиент {client.id}, создана связь между клиентом и пользователем")
         await session.close()
     return client
 
@@ -189,6 +194,8 @@ async def create_reservation(user_id, reservation_data, session):
             await session.commit()
         else:
             raise ReservationError
+
+        await create_logs(session, user_id, f"Создана бронь {reservation.id}")
 
         await session.close()
     return reservation
@@ -241,30 +248,31 @@ async def client_reservation_create(client_data, reservation_data, session):
         reservation.letter = object.letter
         session.add(reservation)
         await session.commit()
+        await create_logs(session, object.author_id, f"Создана бронь {reservation.id}. Создан клиент {client.id}")
         await session.close()
         return reservation
 
 
-async def check_available_time(session: AsyncSession, object_id: int, start_date: date, end_date: date) -> bool:
-    query = select(Reservation).where(
-        (Reservation.object_id == object_id) & (Reservation.status == 'approved') &
-        ((Reservation.start_date < end_date) & (Reservation.end_date > start_date))
-    ).execution_options(populate_existing=True)
+# async def check_available_time(session: AsyncSession, object_id: int, start_date: date, end_date: date) -> bool:
+#     query = select(Reservation).where(
+#         (Reservation.object_id == object_id) & (Reservation.status == 'approved') &
+#         ((Reservation.start_date < end_date) & (Reservation.end_date > start_date))
+#     ).execution_options(populate_existing=True)
+#
+#     result = await session.execute(query)
+#     existing_reservations = result.scalars().all()
+#     print(existing_reservations)
+#     if existing_reservations:
+#         for res in existing_reservations:
+#             if (start_date >= res.start_date and start_date < res.end_date) or \
+#                     (end_date > res.start_date and end_date <= res.end_date) or \
+#                     (start_date <= res.start_date and end_date >= res.end_date):
+#                 return False
+#
+#     return True
 
-    result = await session.execute(query)
-    existing_reservations = result.scalars().all()
-    print(existing_reservations)
-    if existing_reservations:
-        for res in existing_reservations:
-            if (start_date >= res.start_date and start_date < res.end_date) or \
-                    (end_date > res.start_date and end_date <= res.end_date) or \
-                    (start_date <= res.start_date and end_date >= res.end_date):
-                return False
 
-    return True
-
-
-async def create_tariff(tariff_data, session):
+async def create_tariff(tariff_data, session, admin_id):
     new_tariff = Tariff(name=tariff_data.name, daily_price=tariff_data.daily_price,
                         object_count=tariff_data.object_count, description=tariff_data.description,
                         icon=tariff_data.icon)
@@ -272,15 +280,17 @@ async def create_tariff(tariff_data, session):
     async with session() as session:
         session.add(new_tariff)
         await session.commit()
+        await create_logs(session, admin_id, f"Создан тариф {new_tariff.id}")
         await session.close()
     return new_tariff
 
 
-async def create_server(server_data, session):
+async def create_server(server_data, session, admin_id):
     server = Server.from_dict(server_data.__dict__)
     async with session() as session:
         session.add(server)
         await session.commit()
+        await create_logs(session, admin_id, f"Создан сервер {server.id}")
         await session.close()
     return server
 
@@ -297,11 +307,12 @@ async def create_client_user(client_id, user_id, session):
         client_user = UserClient(user_id=user_id, client_id=client_id)
         session.add(client_user)
         await session.commit()
+        await create_logs(session, user_id, f"Создал связь с клиентом {client.id}")
         await session.close()
     return client
 
 
-async def create_logs(session, user, description):
-    log = Log(user_id=user.id, description=description)
+async def create_logs(session, user_id, description):
+    log = Log(user_id=user_id, description=description)
     session.add(log)
     await session.commit()

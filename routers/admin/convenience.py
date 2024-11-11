@@ -16,7 +16,7 @@ async def create(convenience_name: ConvenienceCreate, user_auth=Depends(manager)
     if not await check_admin(user_auth):
         raise Forbidden
 
-    convenience = await create_convenience(convenience_name, db)
+    convenience = await create_convenience(convenience_name, db, user_auth)
     return convenience
 
 
@@ -25,5 +25,5 @@ async def delete(convenience_id: int, user_auth=Depends(manager), db=Depends(get
     if not await check_admin(user_auth):
         raise Forbidden
 
-    await delete_convenience(convenience_id, db)
+    await delete_convenience(convenience_id, db, user_auth.id)
     return "successful"

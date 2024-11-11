@@ -33,7 +33,7 @@ async def update_user_verified(mail, session):
     return user
 
 
-async def update_user_activate(user_data,  session):
+async def update_user_activate(user_data,  session, admin_id):
     async with session() as session:
         query = select(User).where(User.id == user_data.id).options(selectinload(User.tariff))
         result = await session.execute(query)
@@ -45,6 +45,7 @@ async def update_user_activate(user_data,  session):
         user.is_active = not user.is_active
         # session.add(user)
         await session.commit()
+        await create_logs(session, admin_id, f"у пользователя измене статус 'активен' на {user.is_active}")
         await session.close()
     return user
 
@@ -66,6 +67,7 @@ async def update_object_activate(object_data, user, session):
         object.active = not object.active
         # session.add(object)
         await session.commit()
+        await create_logs(session, user.id, f"Статус объекта {object.id} изменен на {object.active}")
         await session.close()
     return object
 
@@ -126,6 +128,10 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
 
         await session.execute(stmt)
         await session.commit()
+        if user.is_admin:
+            await create_logs(session, user.id, f"админ изменил объект {object.id} пользователя {object.author_id}")
+        else:
+            await create_logs(session, user.id, f"Изменение объекта {object.id}")
         await session.close()
         return object
 
@@ -182,6 +188,11 @@ async def update_reservation_status(reservation_data, user, session):
             fm = FastMail(mail_conf)
             await fm.send_message(message)
         await session.commit()
+        # await create_logs(session, , f"Создана бронь {reservation.id}")
+        if user.is_admin:
+            await create_logs(session, user.id, f"админ изменил статус брони {reservation.id} на {reservation.status}")
+        else:
+            await create_logs(session, user.id, f"Изменение статуса брони {reservation.id} на {reservation.status}")
         await session.close()
     return reservation
 
@@ -215,6 +226,10 @@ async def update_reservation(user, reservation_data, session):
 
         await session.execute(stmt)
         await session.commit()
+        if user.is_admin:
+            await create_logs(session, user.id, f"Админ изменил бронь {reservation.id}")
+        else:
+            await create_logs(session, user.id, f"Изменение брони {reservation.id}")
         await session.close()
         return reservation
 
@@ -242,7 +257,7 @@ async def update_user_tariff_activate(tariff_id, user_id, balance, session):
         # session.add(user)
         user.tariff = tariff
         await session.commit()
-        await create_logs(session, user, f"сменил тариф на {tariff.name}")
+        await create_logs(session, user.id, f"сменил тариф на {tariff.name}")
         await session.close()
     return user
 
@@ -260,6 +275,7 @@ async def update_user_password(user_data, user_id, session):
         user.password = password
 
         await session.commit()
+        await create_logs(session, user.id, f"изменил пароль")
         await session.close()
 
     return user
@@ -282,6 +298,7 @@ async def update_user(user_data, session):
 
         await session.execute(stmt)
         await session.commit()
+        await create_logs(session, user.id, f"обновил данные")
         await session.close()
 
     return user
@@ -299,7 +316,7 @@ async def update_user(user_data, session):
 #     return end_date
 
 
-async def update_tariff(tariff_data, session):
+async def update_tariff(tariff_data, session, admin_id):
     async with session() as session:
         query = select(Tariff).where(Tariff.id == tariff_data.id)
         result = await session.execute(query)
@@ -323,12 +340,13 @@ async def update_tariff(tariff_data, session):
         # session.add(tariff)
         await session.execute(stmt)
         await session.commit()
+        await create_logs(session, admin_id, f"админ измени таприф {tariff.id}")
         await session.close()
 
     return tariff
 
 
-async def update_server(server_data, session):
+async def update_server(server_data, session, admin_id):
     async with session() as session:
         query = select(Server).where(Server.id == server_data.id)
         result = await session.execute(query)
@@ -345,12 +363,13 @@ async def update_server(server_data, session):
         )
         await session.execute(stmt)
         await session.commit()
+        await create_logs(session, admin_id, f"админ измени сервер {server.id}")
         await session.close()
 
     return server
 
 
-async def server_activate(server_id, session):
+async def server_activate(server_id, session, admin_id):
     async with session() as session:
         query = select(Server).where(Server.default == True)
         result = await session.execute(query)
@@ -366,6 +385,7 @@ async def server_activate(server_id, session):
         server.default = True
 
         await session.commit()
+        await create_logs(session, admin_id, f"админ измени дефолтный сервер {server.id}")
         await session.close()
 
         return server

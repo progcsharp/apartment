@@ -47,7 +47,7 @@ async def get_admins(db=Depends(get_db), user_auth=Depends(manager)):
 async def activate(user_data: UserActivate,  db=Depends(get_db), user_auth=Depends(manager)):
     if not await check_admin(user_auth):
         raise Forbidden
-    user = await update_user_activate(user_data, db)
+    user = await update_user_activate(user_data, db, user_auth.id)
     return user
 
 #admin
@@ -95,5 +95,5 @@ async def create(user_data: UserCreate, db=Depends(get_db), user_auth=Depends(ma
 async def delete(user_id: int, db=Depends(get_db), user_auth=Depends(manager)):
     if not await check_admin(user_auth):
         raise Forbidden
-    user = await delete_user(user_id, db)
+    user = await delete_user(user_id, db, user_auth.id)
     return user

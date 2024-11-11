@@ -10,6 +10,7 @@ class User(BaseModel):
 
 
 class LogsOut(BaseModel):
+    id: int
     user: User
     description: str
     created_at: datetime

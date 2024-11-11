@@ -16,7 +16,7 @@ async def update(tariff_data: TariffUpdate, user_auth=Depends(manager), db=Depen
     if not await check_admin(user_auth):
         raise Forbidden
 
-    tariff = await update_tariff(tariff_data, db)
+    tariff = await update_tariff(tariff_data, db, user_auth.id)
     return tariff
 
 
@@ -25,5 +25,5 @@ async def create(tariff_data: TariffCreate, user_auth=Depends(manager), db=Depen
     if not await check_admin(user_auth):
         raise Forbidden
 
-    tariff = await create_tariff(tariff_data, db)
+    tariff = await create_tariff(tariff_data, db, user_auth.id)
     return tariff
