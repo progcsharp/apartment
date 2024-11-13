@@ -2,6 +2,7 @@ import hashlib
 from typing import Optional, List
 
 import boto3
+import paginate
 from botocore.config import Config
 from fastapi import APIRouter, Body, UploadFile, File, Depends
 
@@ -30,11 +31,12 @@ async def get(object_id: int, db=Depends(get_db)):
 
 
 @router.get("/userid/{user_id}", response_model=List[PublicObject])
-async def get(user_id: int, db=Depends(get_db)):
+async def get(user_id: int, offset, limit, db=Depends(get_db)):
     objects = await get_object_by_user_id(user_id, db)
     if objects is None:
         raise
-    return objects
+    page = paginate.Page(objects, page=offset, items_per_page=limit)
+    return page
 
 
 @router.put("/activate", response_model=ObjectResponse)

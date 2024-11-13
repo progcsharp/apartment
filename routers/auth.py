@@ -34,7 +34,7 @@ async def register_user(response: Response, user: UserRegister,
     try:
         user_res = await create_user(user, db)
         message = MessageSchema(
-            subject=register['Theme'],
+            subject=register['subject'],
             recipients=[user_res.mail],
             body=register['description'],
             subtype=MessageType.html)
@@ -77,7 +77,7 @@ async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend
     print(f"{code}_login")
     mail_text = authorization
     message = MessageSchema(
-        subject=mail_text['Theme'],
+        subject=mail_text['subject'],
         recipients=[user.mail],
         body=mail_text['description'].replace("(?code)", code),
         subtype=MessageType.html)

@@ -1,3 +1,5 @@
+import json
+
 from fastapi_mail import ConnectionConfig
 
 mail_conf = ConnectionConfig(
@@ -10,9 +12,13 @@ mail_conf = ConnectionConfig(
     MAIL_STARTTLS = True,
     MAIL_SSL_TLS = False)
 
+with open('mail.json', 'r') as f:
+    data = json.load(f)
 
-authorization = {"Theme": "Двухфакторная авторизация",
-                 "description": "Ваш код авторизации (?code)"}
+authorization = data['authorization']
 
-register = {"Theme": "Регистрация",
-                 "description": "Поздравляем вы зарегестрировали на портале StayFlex. Мы вас уведомим когда ваш аккаунт будет активирован"}
+register = data['register']
+
+activate = data['activate']
+
+reservation = data['reservation']

@@ -11,6 +11,7 @@ from routers.admin.client import router as client
 from routers.admin.reservation import router as reservation
 from routers.admin.server import router as server
 from routers.admin.logs import router as logs
+from routers.admin.mail import router as mail
 
 router = APIRouter(prefix="/admin", responses={404: {"description": "Not found"}})
 
@@ -25,4 +26,4 @@ router.include_router(router=tariff)
 router.include_router(router=client)
 router.include_router(router=server)
 router.include_router(router=logs)
-
+router.include_router(router=mail)
