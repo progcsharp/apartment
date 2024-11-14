@@ -4,6 +4,14 @@ from pydantic import BaseModel
 class Mail(BaseModel):
     subject: str
     description: str
+    name: str
+
+
+class MailOut(BaseModel):
+    subject: str
+    description: str
+    name: str
+    slug: str
 
 
 class MailSend(BaseModel):
