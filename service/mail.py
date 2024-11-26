@@ -21,4 +21,6 @@ register = data['register']
 
 activate = data['activate']
 
+deactivate = data['deactivate']
+
 reservation = data['reservation']

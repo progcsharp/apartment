@@ -169,7 +169,8 @@ class Reservation(Base):
     end_date = Column(Date)
     status = Column(String(20))
     description = Column(Text)
-    guest_count = Column(Integer)
+    adult_places = Column(Integer)
+    child_places = Column(Integer)
     letter = Column(Text)
 
     # Внешние ключи

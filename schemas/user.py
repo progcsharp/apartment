@@ -60,6 +60,7 @@ class UserRegisterResponse(BaseModel):
 class UserResponseList(BaseModel):
     id: int
     fullname: str
+    mail: str
     is_active: bool
     date_before: date
     object_count: int

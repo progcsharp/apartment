@@ -39,6 +39,7 @@ async def edit(name: str, email: Mail, user_auth=Depends(manager)):
 
     data[name]['subject'] = email.subject
     data[name]['description'] = email.description
+    data[name]['name'] = email.name
 
     with open('mail.json', 'w') as file:
         json.dump(data, file, indent=2)

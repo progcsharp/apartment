@@ -299,3 +299,10 @@ ALTER TABLE server ADD COLUMN link TEXT;
 
 ALTER TABLE reservation
 ADD COLUMN guest_count INT;
+
+
+ALTER TABLE reservation DROP COLUMN guest_count;
+
+ALTER TABLE reservation
+ADD COLUMN adult_places INTEGER,
+ADD COLUMN child_places INTEGER;

@@ -12,6 +12,7 @@ from db.handler.validate import calculate_end_date
 from exception.auth import Forbidden
 from exception.database import NotFoundedError, ReservationError
 from service.file import delete_file, upload_file
+from service.mail import deactivate, activate
 from service.security import hash_password
 
 
@@ -69,6 +70,26 @@ async def update_object_activate(object_data, user, session):
         await session.commit()
         await create_logs(session, user.id, f"Статус объекта {object.id} изменен на {object.active}")
         await session.close()
+
+        if object.active:
+            message = MessageSchema(
+                subject=activate['subject'],
+                recipients=[object.author.mail],
+                body=activate['description'],
+                subtype=MessageType.html)
+
+            fm = FastMail(mail_conf)
+            await fm.send_message(message)
+        else:
+            message = MessageSchema(
+                subject=deactivate['subject'],
+                recipients=[object.author.mail],
+                body=deactivate['description'],
+                subtype=MessageType.html)
+
+            fm = FastMail(mail_conf)
+            await fm.send_message(message)
+
     return object
 
 
@@ -178,15 +199,15 @@ async def update_reservation_status(reservation_data, user, session):
 
         # session.add(reservation)
 
-        if reservation_data.status == "approved":
-            message = MessageSchema(
-                subject="Fastapi-Mail module",
-                recipients=[reservation.client.email],
-                body=reservation.letter,
-                subtype=MessageType.html)
-
-            fm = FastMail(mail_conf)
-            await fm.send_message(message)
+        # if reservation_data.status == "approved":
+        #     message = MessageSchema(
+        #         subject="Fastapi-Mail module",
+        #         recipients=[reservation.client.email],
+        #         body=reservation.letter,
+        #         subtype=MessageType.html)
+        #
+        #     fm = FastMail(mail_conf)
+        #     await fm.send_message(message)
         await session.commit()
         # await create_logs(session, , f"Создана бронь {reservation.id}")
         if user.is_admin:
@@ -240,9 +261,16 @@ async def update_user_tariff_activate(tariff_id, user_id, balance, session):
         result = await session.execute(query)
         tariff = result.scalar_one_or_none()
 
+        message_log = ''
+
         query = select(User).where(User.id == user_id)
         result = await session.execute(query)
         user = result.scalar_one_or_none()
+
+        if user.tariff_id != tariff_id:
+            message_log = f"Пользователь сменил тариф на {tariff.name}."
+        else:
+            message_log = f'Пользователь не менял тариф.'
 
         if not user and not tariff:
             raise NotFoundedError
@@ -257,7 +285,8 @@ async def update_user_tariff_activate(tariff_id, user_id, balance, session):
         # session.add(user)
         user.tariff = tariff
         await session.commit()
-        await create_logs(session, user.id, f"сменил тариф на {tariff.name}")
+
+        await create_logs(session, user.id, f"{message_log} Добавили баланс: {balance}")
         await session.close()
     return user
 

@@ -13,10 +13,16 @@
     "slug": "register"
   },
   "activate": {
-    "subject": "ывмывым",
-    "description": "svsdvsdvs",
-    "name": "Добро пожаловать",
+    "subject": "Активация пользователя",
+    "description": "Здравствуйте! Вас активировали",
+    "name": "Активация",
     "slug": "activate"
+  },
+  "deactivate": {
+    "subject": "Деактивация пользователя ",
+    "description": "Здравствуйте! Вас деактивировали",
+    "name": "Деактивация",
+    "slug": "deactivate"
   },
   "reservation": {
     "subject": "sd vsdvsdv",

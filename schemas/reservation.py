@@ -26,7 +26,8 @@ class ReservationCreate(ReservationBase):
     description: str
     status: str = "new"
     letter: str
-    guest_count: int
+    adult_places: int
+    child_places: int
 
 
 class ReservationResponse(ReservationBase):
@@ -36,7 +37,8 @@ class ReservationResponse(ReservationBase):
     client: Client
     object: Object
     letter: str
-    guest_count: int
+    adult_places: int
+    child_places: int
 
 
 class ReservationUpdateStatus(BaseModel):
@@ -52,7 +54,8 @@ class ReservationUpdate(BaseModel):
     description: str
     status: str
     letter: str
-    guest_count: int
+    adult_places: int
+    child_places: int
 
 
 class ClientData(BaseModel):
@@ -64,4 +67,5 @@ class ClientData(BaseModel):
 class ReservationData(ReservationBase):
     object_id: int
     description: str
-    guest_count: int
+    adult_places: int
+    child_places: int
