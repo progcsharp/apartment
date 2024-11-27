@@ -15,7 +15,7 @@ async def create(name: Hashtag = Body(...), user_auth=Depends(manager), db=Depen
     if not await check_admin(user_auth):
         raise Forbidden
 
-    region = await create_hashtag(name, db, user_auth)
+    region = await create_hashtag(name.name, db, user_auth)
     return region
 
 

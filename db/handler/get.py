@@ -2,7 +2,7 @@ from sqlalchemy import select, desc, func, and_
 from sqlalchemy.orm import selectinload, aliased
 
 from db import make_session, User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, \
-    Reservation, Tariff, Server, Log, Hashtag
+    Reservation, Tariff, Server, Log, Hashtag, ObjectHashtag
 from db.handler.validate import filter_approved_reservations
 from exception.database import NotFoundedError
 from schemas.user import UserResponse
@@ -158,9 +158,17 @@ async def get_all_hashtag(session):
     async with session() as session:
         query = select(Hashtag)
         result = await session.execute(query)
-        hashtag = result.scalars().all()
+        hashtags = result.scalars().all()
 
-        return hashtag
+        for hashtag in hashtags:
+            query_object = select(func.count(ObjectHashtag.hashtag_id)).where(
+                ObjectHashtag.hashtag_id == hashtag.id)
+            result = await session.execute(query_object)
+            objects_count = result.scalar()
+
+            hashtag.object_count = objects_count
+
+        return hashtags
 
 
 async def get_convenience_by_id(convenience_id, session):
