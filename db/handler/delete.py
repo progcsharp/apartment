@@ -245,7 +245,7 @@ async def can_delete_client(client, user, session):
     else:
         query = select(Reservation).where(Reservation.client_id == client.id).join(Object).filter(Object.author_id == user.id)
     result = await session.execute(query)
-    reservations = result.scalar_one_or_none()
+    reservations = result.scalars().all()
 
     if not reservations:
         return True

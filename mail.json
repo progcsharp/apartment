@@ -2,7 +2,7 @@
   "authorization": {
     "subject": "string",
     "description": "string",
-    "name": "Добро пожаловать",
+    "name": "(?code)",
     "slug": "authorization"
 
   },
@@ -25,9 +25,9 @@
     "slug": "deactivate"
   },
   "reservation": {
-    "subject": "sd vsdvsdv",
-    "description": "dvsvsdv",
-    "name": "Добро пожаловать",
+    "subject": "Бронь",
+    "description": "Ваша бронь одобрена. Служебное сообщение (?message)",
+    "name": "одобрение брони",
     "slug": "reservation"
   }
 }

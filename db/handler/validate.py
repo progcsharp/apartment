@@ -13,6 +13,9 @@ async def check_available_time(session: AsyncSession, object_id: int, start_date
         ((Reservation.start_date < end_date) & (Reservation.end_date > start_date))
     ).execution_options(populate_existing=True)
 
+    start_date = start_date + timedelta(days=1)
+    end_date = end_date - timedelta(days=1)
+    
     result = await session.execute(query)
     existing_reservations = result.scalars().all()
     print(existing_reservations)

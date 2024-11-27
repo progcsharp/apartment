@@ -125,6 +125,8 @@ class Object(Base):
 
     approve_reservation = relationship("Reservation", back_populates="object")
 
+    hashtags = relationship("Hashtag", secondary="object_hashtag", back_populates="objects")
+
 
 class ObjectConvenience(Base):
     __tablename__ = 'object_convenience'
@@ -208,3 +210,23 @@ class Log(Base):
 
     # Связь обратно к таблице User
     user = relationship("User", back_populates="logs")
+
+
+class Hashtag(Base):
+    __tablename__ = 'hashtags'
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), unique=True, nullable=False, index=True)
+
+    objects = relationship("Object", secondary="object_hashtag", back_populates="hashtags")
+
+
+class ObjectHashtag(Base):
+    __tablename__ = "object_hashtag"
+
+    id = Column(Integer, primary_key=True)
+    object_id = Column(Integer, ForeignKey("object.id"))
+    hashtag_id = Column(Integer, ForeignKey("hashtags.id"))
+
+    # object = relationship("Object", back_populates="hashtags")
+    # hashtag = relationship("Hashtag", back_populates="objects")

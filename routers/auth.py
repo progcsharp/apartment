@@ -1,5 +1,4 @@
 import random
-import string
 
 from fastapi import APIRouter, Depends
 from fastapi_cache.backends.memory import InMemoryCacheBackend
@@ -22,10 +21,9 @@ router = APIRouter(prefix="/auth", responses={404: {"description": "Not found"}}
 
 
 # @router.get('')
-# async def get_test(response: Response, cache: InMemoryCacheBackend = Depends(redis_cache), db = Depends(get_db)):
-#     if []:
-#         return True
-#     return False
+# async def get_test(email: str):
+#     email_regex = r'^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$'
+#     return bool(re.match(email_regex, email))
 
 
 @router.post('/register', response_model=UserRegisterResponse)

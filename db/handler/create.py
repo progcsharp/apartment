@@ -5,12 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, Reservation, \
-    Tariff, Server, Log
+    Tariff, Server, Log, Hashtag, ObjectHashtag
 from db.handler import check_available_time
 from db.handler.validate import calculate_end_date
-from exception.auth import Forbidden
+from exception.auth import Forbidden, EmailNotValid
 from exception.database import NotFoundedError, ReservationError
 from service.file import upload_file
+from service.mail import check_valid_email
 from service.security import hash_password
 
 
@@ -21,6 +22,10 @@ async def create_user(user_data, session, admin = None):
     #             date_before=date.today(), is_active=user_data.is_active, is_verified=user_data.is_verified,
     #             is_admin=user_data.is_admin, balance=user_data.balance)
     user = User.from_dict(user_data.__dict__)
+
+    if not check_valid_email(user_data.mail):
+        raise EmailNotValid
+
     async with session() as session:
 
         query = select(User).where(User.mail == user_data.mail)
@@ -67,6 +72,18 @@ async def create_region(region_data, session, admin):
         await session.close()
 
     return region
+
+
+async def create_hashtag(name, session, admin):
+    hashtag = Hashtag(name=name)
+
+    async with session() as session:
+        session.add(hashtag)
+        await session.commit()
+        await create_logs(session, admin.id, f"Админ создал хештег {hashtag.name}")
+        await session.close()
+
+    return hashtag
 
 
 async def create_city(city_data, session, admin):
@@ -140,6 +157,9 @@ async def create_object(object_data, files, user_id, session):
         result = await session.execute(query)
         object = result.scalar_one_or_none()
 
+        for tag_id in object_data.hashtags:
+            await create_object_hashtag(object.id, tag_id, session)
+
         await create_logs(session, user_id, f"Создал объект {object.id}")
 
         await session.close()
@@ -150,6 +170,9 @@ async def create_object(object_data, files, user_id, session):
 async def create_client(client_data, session, user_id=None):
     client = Client(fullname=client_data.fullname, reiting=client_data.reiting,
                     phone=client_data.phone, email=client_data.email)
+
+    if not check_valid_email(client_data.email):
+        raise EmailNotValid
 
     async with session() as session:
         session.add(client)
@@ -310,6 +333,23 @@ async def create_client_user(client_id, user_id, session):
         await create_logs(session, user_id, f"Создал связь с клиентом {client.id}")
         await session.close()
     return client
+
+
+async def create_object_hashtag(object_id, hashtag_id, session):
+    query = select(ObjectHashtag).where(ObjectHashtag.object_id == object_id).\
+        where(ObjectHashtag.hashtag_id == hashtag_id)
+    result = await session.execute(query)
+    tag = result.scalar_one_or_none()
+
+    if tag is not None:
+        return tag
+
+    object_hashtag = ObjectHashtag(object_id=object_id, hashtag_id=hashtag_id)
+
+    session.add(object_hashtag)
+    await session.commit()
+    await session.close()
+    return object_hashtag
 
 
 async def create_logs(session, user_id, description):

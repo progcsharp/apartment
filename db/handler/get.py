@@ -2,7 +2,7 @@ from sqlalchemy import select, desc, func, and_
 from sqlalchemy.orm import selectinload, aliased
 
 from db import make_session, User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Client, UserClient, \
-    Reservation, Tariff, Server, Log
+    Reservation, Tariff, Server, Log, Hashtag
 from db.handler.validate import filter_approved_reservations
 from exception.database import NotFoundedError
 from schemas.user import UserResponse
@@ -154,6 +154,15 @@ async def get_all_convenience(session):
         return conveniences
 
 
+async def get_all_hashtag(session):
+    async with session() as session:
+        query = select(Hashtag)
+        result = await session.execute(query)
+        hashtag = result.scalars().all()
+
+        return hashtag
+
+
 async def get_convenience_by_id(convenience_id, session):
     async with session() as session:
         query = select(Convenience).where(Convenience.id == convenience_id)
@@ -202,7 +211,8 @@ async def get_by_id_object_by_user(object_id, session):
         query = select(Object).where(Object.id == object_id).options(
             selectinload(Object.city).subqueryload(City.region)). \
             options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
-            options(selectinload(Object.conveniences)).options(selectinload(Object.approve_reservation))
+            options(selectinload(Object.conveniences)).options(selectinload(Object.approve_reservation)).\
+            options(selectinload(Object.hashtags))
         # else:
         #     query = select(Object).where(Object.id == object_id).where(Object.author_id == user.id).options(selectinload(Object.city).subqueryload(City.region)).\
         #         options(selectinload(Object.apartment)).options(selectinload(Object.author)).\

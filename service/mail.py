@@ -1,4 +1,5 @@
 import json
+import re
 
 from fastapi_mail import ConnectionConfig
 
@@ -24,3 +25,9 @@ activate = data['activate']
 deactivate = data['deactivate']
 
 reservation = data['reservation']
+
+
+def check_valid_email(email):
+    email_regex = r'^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(email_regex, email))
+

@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from service import mail
 
 from fastapi_mail import MessageSchema, MessageType, FastMail
 from sqlalchemy import select, update, delete
@@ -7,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from config import mail_conf
 from db import User, Tariff, Object, Reservation, City, ObjectConvenience, Server, Region
 from db.handler import check_available_time
-from db.handler.create import create_logs
+from db.handler.create import create_logs, create_object_hashtag
 from db.handler.validate import calculate_end_date
 from exception.auth import Forbidden
 from exception.database import NotFoundedError, ReservationError
@@ -147,6 +148,9 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
             .values(**dict(object_data))
         )
 
+        for tag_id in object_data.hashtags:
+            await create_object_hashtag(object.id, tag_id, session)
+
         await session.execute(stmt)
         await session.commit()
         if user.is_admin:
@@ -198,20 +202,20 @@ async def update_reservation_status(reservation_data, user, session):
         reservation.status = reservation_data.status
 
         # session.add(reservation)
+        message = mail.reservation.replace("(?message)", reservation.letter)
+        if reservation_data.status == "approved":
+            message = MessageSchema(
+                subject="Fastapi-Mail module",
+                recipients=[reservation.client.email],
+                body=f'{message}',
+                subtype=MessageType.html)
 
-        # if reservation_data.status == "approved":
-        #     message = MessageSchema(
-        #         subject="Fastapi-Mail module",
-        #         recipients=[reservation.client.email],
-        #         body=reservation.letter,
-        #         subtype=MessageType.html)
-        #
-        #     fm = FastMail(mail_conf)
-        #     await fm.send_message(message)
+            fm = FastMail(mail_conf)
+            await fm.send_message(message)
         await session.commit()
         # await create_logs(session, , f"Создана бронь {reservation.id}")
         if user.is_admin:
-            await create_logs(session, user.id, f"админ изменил статус брони {reservation.id} на {reservation.status}")
+            await create_logs(session, user.id, f"Aдмин изменил статус брони {reservation.id} на {reservation.status}")
         else:
             await create_logs(session, user.id, f"Изменение статуса брони {reservation.id} на {reservation.status}")
         await session.close()

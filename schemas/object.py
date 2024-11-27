@@ -49,6 +49,11 @@ class Convenience(BaseModel):
     icon: str
 
 
+class Hashtag(BaseModel):
+    id: int
+    name: str
+
+
 class Author(BaseModel):
     id: int
     fullname: str
@@ -87,10 +92,10 @@ class ObjectResponse(ObjectBase):
     letter: str = None
 
 
-
 @remove_field('letter')
 class PublicObject(ObjectResponse):
     approve_reservation: Union[List[Reservation], None]
+    hashtags: List[Hashtag]
 
 
 class ObjectUpdate(ObjectBase):
@@ -123,6 +128,7 @@ class ObjectCreate(ObjectBase):
     city_id: int
     apartment_id: int
     convenience: List[int]
+    hashtags: List[int] = []
     letter: str = None
 
     @model_validator(mode='before')

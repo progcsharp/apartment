@@ -306,3 +306,15 @@ ALTER TABLE reservation DROP COLUMN guest_count;
 ALTER TABLE reservation
 ADD COLUMN adult_places INTEGER,
 ADD COLUMN child_places INTEGER;
+
+CREATE TABLE hashtags (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE object_hashtag (
+    id SERIAL PRIMARY KEY,
+    object_id INTEGER REFERENCES object(id),
+    hashtag_id INTEGER REFERENCES hashtags(id),
+    UNIQUE(object_id, hashtag_id)
+);

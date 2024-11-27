@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from starlette.status import HTTP_403_FORBIDDEN, HTTP_406_NOT_ACCEPTABLE
+from starlette.status import HTTP_403_FORBIDDEN, HTTP_406_NOT_ACCEPTABLE, HTTP_400_BAD_REQUEST
 
 
 class Forbidden(HTTPException):
@@ -24,3 +24,9 @@ class CodeExpire(HTTPException):
     def __init__(self):
         self.status_code = HTTP_406_NOT_ACCEPTABLE
         self.detail = "Code expire"
+
+
+class EmailNotValid(HTTPException):
+    def __init__(self):
+        self.status_code = HTTP_400_BAD_REQUEST
+        self.detail = "Email not valid"
