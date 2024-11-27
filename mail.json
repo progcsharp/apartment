@@ -1,20 +1,20 @@
 {
   "authorization": {
-    "subject": "string",
-    "description": "string",
-    "name": "(?code)",
+    "subject": "Код двухфакторной авторизации",
+    "description": "Уважаемый (?FULLNAME), \nВаш код для двухфакторной авторизации: (?CODE)\n\nВсегда с Вами, команда StayFlex\nhttps://stayflex.ru",
+    "name": "2FA",
     "slug": "authorization"
 
   },
   "register": {
-    "subject": "вымвым",
-    "description": "ывммымы",
+    "subject": "Регистрация аккаунта на сервисе StayFlex",
+    "description": "Уважаемый (?FULLNAME), \nПоздравляем с регистрацией.\n\nВаши данные для входа:\nСтраница авторизации:\nЛогин: (?EMAIL)\nПароль: указан Вами при регистрации\n\nВсегда с Вами, команда StayFlex\nhttps://stayflex.ru",
     "name": "Добро пожаловать",
     "slug": "register"
   },
   "activate": {
-    "subject": "Активация пользователя",
-    "description": "Здравствуйте! Вас активировали",
+    "subject": "Активация аккаунта на сервисе StayFlex",
+    "description": "Уважаемый (?FULLNAME), \nВаш аккаунт активирован\n\nВсегда с Вами, команда StayFlex\nhttps://stayflex.ru",
     "name": "Активация",
     "slug": "activate"
   },
@@ -24,10 +24,22 @@
     "name": "Деактивация",
     "slug": "deactivate"
   },
-  "reservation": {
-    "subject": "Бронь",
-    "description": "Ваша бронь одобрена. Служебное сообщение (?message)",
+  "new reservation": {
+    "subject": "Ваша бронь принята в обработку",
+    "description": "Уважаемый (?CLIENT_FULLNAME), ваша бронь принята в обработку.\n\nВсегда с Вами, команда StayFlex\nhttps://stayflex.ru",
+    "name": "новая бронь",
+    "slug": "new reservation"
+  },
+  "approve reservation": {
+    "subject": "Ваша бронь подтверждена",
+    "description": "Уважаемый (?CLIENT_FULLNAME), ваша бронь подтверждена.\n\n-------------------------------------------------------------------------\nДетали бронирования:\n\nНазвание объекта: (?OBJECT_NAME)\nАдрес объекта: (?OBJECT_ADDRESS)\nДата заезда: (?START_DATE)\nДата выезда: (?END_DATE)\nКоличество человек: (?ADULTS) взрослых, (?KIDS) детей\nСтоимость: (?PRICE) руб/сутки.\n-------------------------------------------------------------------------\n\nВсегда с Вами, команда StayFlex\nhttps://stayflex.ru",
     "name": "одобрение брони",
-    "slug": "reservation"
+    "slug": "approve reservation"
+  },
+  "reject reservation": {
+    "subject": "Ваша бронь отклонена",
+    "description": "Уважаемый (?CLIENT_FULLNAME), ваша бронь отклонена владельцем объекта.\n\nВсегда с Вами, команда StayFlex\nhttps://stayflex.ru\n",
+    "name": "отклоненная бронь",
+    "slug": "reject reservation"
   }
 }

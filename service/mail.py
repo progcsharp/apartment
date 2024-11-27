@@ -13,7 +13,7 @@ mail_conf = ConnectionConfig(
     MAIL_STARTTLS = True,
     MAIL_SSL_TLS = False)
 
-with open('mail.json', 'r') as f:
+with open('mail.json', 'r', encoding='utf-8') as f:
     data = json.load(f)
 
 authorization = data['authorization']
@@ -24,7 +24,11 @@ activate = data['activate']
 
 deactivate = data['deactivate']
 
-reservation = data['reservation']
+new_reservation = data['new reservation']
+
+approve_reservation = data['approve reservation']
+
+reject_reservation = data['reject reservation']
 
 
 def check_valid_email(email):

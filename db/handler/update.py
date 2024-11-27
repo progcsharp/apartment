@@ -202,16 +202,29 @@ async def update_reservation_status(reservation_data, user, session):
         reservation.status = reservation_data.status
 
         # session.add(reservation)
-        message = mail.reservation.replace("(?message)", reservation.letter)
+        message_approve = mail.approve_reservation['description'].replace("(?CLIENT_FULLNAME)", reservation.client.fullname).\
+            replace("(?OBJECT_NAME)", reservation.object.name).\
+            replace("(?OBJECT_ADDRESS)", f"{reservation.object.city},{reservation.object.address}").\
+            replace("(?START_DATE)", reservation.start_date).replace("(?END_DATE)", reservation.end_date).\
+            replace("(?ADULTS)", reservation.adult_places).replace("(?KIDS)", reservation.child_places).\
+            replace("(?PRICE)", reservation.object.price)
+
+        message_reject = mail.reject_reservation['description'].replace("(?CLIENT_FULLNAME)", reservation.client.fullname)
+
         if reservation_data.status == "approved":
             message = MessageSchema(
-                subject="Fastapi-Mail module",
+                subject=message_approve["subject"],
                 recipients=[reservation.client.email],
-                body=f'{message}',
+                body=f'{message_approve}',
                 subtype=MessageType.html)
-
-            fm = FastMail(mail_conf)
-            await fm.send_message(message)
+        elif reservation_data.status == "rejected":
+            message = MessageSchema(
+                subject=message_reject["subject"],
+                recipients=[reservation.client.email],
+                body=f'{message_reject}',
+                subtype=MessageType.html)
+        fm = FastMail(mail_conf)
+        await fm.send_message(message)
         await session.commit()
         # await create_logs(session, , f"Создана бронь {reservation.id}")
         if user.is_admin:

@@ -1,5 +1,6 @@
 from datetime import date
 
+from fastapi_mail import MessageSchema, FastMail, MessageType
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -10,8 +11,9 @@ from db.handler import check_available_time
 from db.handler.validate import calculate_end_date
 from exception.auth import Forbidden, EmailNotValid
 from exception.database import NotFoundedError, ReservationError
+from service import mail
 from service.file import upload_file
-from service.mail import check_valid_email
+from service.mail import check_valid_email, mail_conf
 from service.security import hash_password
 
 
@@ -199,6 +201,10 @@ async def create_reservation(user_id, reservation_data, session):
         result = await session.execute(query)
         object = result.scalar_one_or_none()
 
+        query = select(Client).where(Client.id == reservation_data.client_id)
+        result = await session.execute(query)
+        client = result.scalar_one_or_none()
+
         if not object:
             raise NotFoundedError
 
@@ -221,6 +227,14 @@ async def create_reservation(user_id, reservation_data, session):
         await create_logs(session, user_id, f"Создана бронь {reservation.id}")
 
         await session.close()
+        message_new_reservation = mail.new_reservation['description'].replace("(?CLIENT_FULLNAME)", client.fullname)
+        message = MessageSchema(
+            subject=message_new_reservation["subject"],
+            recipients=[reservation.client.email],
+            body=f'{message_new_reservation}',
+            subtype=MessageType.html)
+        fm = FastMail(mail_conf)
+        await fm.send_message(message)
     return reservation
 
 

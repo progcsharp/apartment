@@ -34,7 +34,7 @@ async def register_user(response: Response, user: UserRegister,
         message = MessageSchema(
             subject=register['subject'],
             recipients=[user_res.mail],
-            body=register['description'],
+            body=register['description'].replace("(?EMAIL)", user_res.mail).replace("(?FULLNAME)", user_res.fullname),
             subtype=MessageType.html)
         fm = FastMail(mail_conf)
         await fm.send_message(message)
@@ -77,7 +77,7 @@ async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend
     message = MessageSchema(
         subject=mail_text['subject'],
         recipients=[user.mail],
-        body=mail_text['description'].replace("(?code)", code),
+        body=mail_text['description'].replace("(?CODE)", code).replace("(?FULLNAME)", user.fullname),
         subtype=MessageType.html)
 
     await cache.set(f'{user.mail}_login', code)
