@@ -242,7 +242,37 @@ async def get_object_by_user_id(user_id, session):
         # if user.is_admin:
         query = select(Object).where(Object.author_id==user_id).options(selectinload(Object.city).subqueryload(City.region)).\
             options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
-            options(selectinload(Object.conveniences)).options(selectinload(Object.approve_reservation))
+            options(selectinload(Object.conveniences)).options(selectinload(Object.approve_reservation)).\
+            options(selectinload(Object.hashtags))
+        result = await session.execute(query)
+        objects = result.scalars().all()
+
+        await session.close()
+    return objects
+
+
+async def get_user_object_by_hashtag(user_id, hashtags, session):
+    async with session() as session:
+        # if user.is_admin:
+        # query = select(Object).where(Object.author_id==user_id).join(ObjectHashtag).\
+        #     filter(ObjectHashtag.hashtag_id.in_(hashtags)).\
+        #     options(selectinload(Object.city).subqueryload(City.region)).\
+        #     options(selectinload(Object.apartment)).options(selectinload(Object.author)).\
+        #     options(selectinload(Object.conveniences)).options(selectinload(Object.approve_reservation)).\
+        #     options(selectinload(Object.hashtags))
+        if not hashtags:
+            query = select(Object).where(Object.author_id == user_id). \
+                options(selectinload(Object.city).subqueryload(City.region)). \
+                options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
+                options(selectinload(Object.conveniences)).options(selectinload(Object.approve_reservation)). \
+                options(selectinload(Object.hashtags))
+        else:
+            query = select(Object).where(Object.author_id == user_id).join(ObjectHashtag). \
+                filter(ObjectHashtag.hashtag_id.in_(hashtags)). \
+                options(selectinload(Object.city).subqueryload(City.region)). \
+                options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
+                options(selectinload(Object.conveniences)).options(selectinload(Object.approve_reservation)). \
+                options(selectinload(Object.hashtags))
         result = await session.execute(query)
         objects = result.scalars().all()
 

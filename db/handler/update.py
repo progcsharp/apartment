@@ -6,14 +6,14 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 
 from config import mail_conf
-from db import User, Tariff, Object, Reservation, City, ObjectConvenience, Server, Region
+from db import User, Tariff, Object, Reservation, City, ObjectConvenience, Server, Region, ObjectHashtag
 from db.handler import check_available_time
 from db.handler.create import create_logs, create_object_hashtag
 from db.handler.validate import calculate_end_date
 from exception.auth import Forbidden
 from exception.database import NotFoundedError, ReservationError
 from service.file import delete_file, upload_file
-from service.mail import deactivate, activate
+from service.mail import message_mail
 from service.security import hash_password
 
 
@@ -73,6 +73,7 @@ async def update_object_activate(object_data, user, session):
         await session.close()
 
         if object.active:
+            activate = message_mail("activate")
             message = MessageSchema(
                 subject=activate['subject'],
                 recipients=[object.author.mail],
@@ -82,6 +83,7 @@ async def update_object_activate(object_data, user, session):
             fm = FastMail(mail_conf)
             await fm.send_message(message)
         else:
+            deactivate = message_mail("deactivate")
             message = MessageSchema(
                 subject=deactivate['subject'],
                 recipients=[object.author.mail],
@@ -140,7 +142,21 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
             oc = ObjectConvenience(object_id=object.id, convenience_id=convenience_id)
             session.add(oc)
 
+        query = select(ObjectHashtag.hashtag_id).where(ObjectHashtag.object_id == object_data.id)
+        result = await session.execute(query)
+        object_hashtag = result.scalars().all()
 
+        delete_array_hashtag, create_array_hashtag = update_arrays(object_hashtag, convenience_and_removed_photos.hashtag)
+
+        delete_hashtag_stmt = (
+            delete(ObjectHashtag).where(ObjectHashtag.hashtag_id.in_(delete_array_hashtag))
+        )
+
+        await session.execute(delete_hashtag_stmt)
+
+        for hashtag_id in create_array:
+            oc = ObjectHashtag(object_id=object.id, hashtag_id=hashtag_id)
+            session.add(oc)
 
         stmt = (
             update(Object)
@@ -202,14 +218,14 @@ async def update_reservation_status(reservation_data, user, session):
         reservation.status = reservation_data.status
 
         # session.add(reservation)
-        message_approve = mail.approve_reservation['description'].replace("(?CLIENT_FULLNAME)", reservation.client.fullname).\
+        message_approve = message_mail("approve reservation")['description'].replace("(?CLIENT_FULLNAME)", reservation.client.fullname).\
             replace("(?OBJECT_NAME)", reservation.object.name).\
             replace("(?OBJECT_ADDRESS)", f"{reservation.object.city},{reservation.object.address}").\
             replace("(?START_DATE)", reservation.start_date).replace("(?END_DATE)", reservation.end_date).\
             replace("(?ADULTS)", reservation.adult_places).replace("(?KIDS)", reservation.child_places).\
             replace("(?PRICE)", reservation.object.price)
 
-        message_reject = mail.reject_reservation['description'].replace("(?CLIENT_FULLNAME)", reservation.client.fullname)
+        message_reject = message_mail("reject reservation")['description'].replace("(?CLIENT_FULLNAME)", reservation.client.fullname)
 
         if reservation_data.status == "approved":
             message = MessageSchema(
@@ -287,7 +303,7 @@ async def update_user_tariff_activate(tariff_id, user_id, balance, session):
         if user.tariff_id != tariff_id:
             message_log = f"Пользователь сменил тариф на {tariff.name}."
         else:
-            message_log = f'Пользователь не менял тариф.'
+            message_log = f'Пользователь Добавили баланс: {balance}'
 
         if not user and not tariff:
             raise NotFoundedError
@@ -303,7 +319,7 @@ async def update_user_tariff_activate(tariff_id, user_id, balance, session):
         user.tariff = tariff
         await session.commit()
 
-        await create_logs(session, user.id, f"{message_log} Добавили баланс: {balance}")
+        await create_logs(session, user.id, f"{message_log}")
         await session.close()
     return user
 
@@ -435,5 +451,3 @@ async def server_activate(server_id, session, admin_id):
         await session.close()
 
         return server
-
-

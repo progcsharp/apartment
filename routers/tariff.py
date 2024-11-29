@@ -37,7 +37,7 @@ async def activate_tariff(tariff_id: int = Body, db=Depends(get_db), user_auth=D
     # fm = FastMail(mail_conf)
     # await fm.send_message(message)
 
-    await update_user_tariff_activate(tariff.id, user_auth.id, user_auth.balance, db)
+    await update_user_tariff_activate(tariff.id, user_auth.id, 0, db)
 
     return "ok"
 

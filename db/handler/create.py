@@ -13,7 +13,7 @@ from exception.auth import Forbidden, EmailNotValid
 from exception.database import NotFoundedError, ReservationError
 from service import mail
 from service.file import upload_file
-from service.mail import check_valid_email, mail_conf
+from service.mail import check_valid_email, mail_conf, message_mail
 from service.security import hash_password
 
 
@@ -227,7 +227,7 @@ async def create_reservation(user_id, reservation_data, session):
         await create_logs(session, user_id, f"Создана бронь {reservation.id}")
 
         await session.close()
-        message_new_reservation = mail.new_reservation['description'].replace("(?CLIENT_FULLNAME)", client.fullname)
+        message_new_reservation = message_mail("new reservation")['description'].replace("(?CLIENT_FULLNAME)", client.fullname)
         message = MessageSchema(
             subject=message_new_reservation["subject"],
             recipients=[reservation.client.email],

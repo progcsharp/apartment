@@ -14,7 +14,7 @@ from db.handler.get import get_user
 from db.handler.update import update_user_verified
 from exception.auth import NoVerifyCode, NoVerifyPWD, CodeExpire, Forbidden
 from schemas.user import UserRegister, UserLogin, UserActivateCode, UserRegisterResponse
-from service.mail import authorization, mail_conf, register
+from service.mail import mail_conf, message_mail
 from service.security import verify_password, manager
 
 router = APIRouter(prefix="/auth", responses={404: {"description": "Not found"}})
@@ -31,6 +31,7 @@ async def register_user(response: Response, user: UserRegister,
                    db=Depends(get_db)):
     try:
         user_res = await create_user(user, db)
+        register = message_mail("register")
         message = MessageSchema(
             subject=register['subject'],
             recipients=[user_res.mail],
@@ -73,7 +74,7 @@ async def login(response: Response, data: UserLogin, cache: InMemoryCacheBackend
         raise NoVerifyPWD
     code = ''.join(map(str, random.sample(range(10), 5)))
     print(f"{code}_login")
-    mail_text = authorization
+    mail_text = message_mail("authorization")
     message = MessageSchema(
         subject=mail_text['subject'],
         recipients=[user.mail],

@@ -2,7 +2,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
 from db import User, Region, City, Apartment, Convenience, Object, ObjectConvenience, Reservation, Client, UserClient, \
-    Server
+    Server, ObjectHashtag, Hashtag
 from db.handler.create import create_logs
 from exception.auth import Forbidden
 from exception.database import NotFoundedError, DependencyConflictError, ErrorDeleteServer
@@ -108,6 +108,28 @@ async def delete_convenience(id, session, admin_id):
         await session.delete(convenience)
         await session.commit()
         await create_logs(session, admin_id, f"удалено удобство {convenience.name}")
+        await session.close()
+
+    return "successful"
+
+
+async def delete_hashtag(hashtag_id, session, admin_id):
+    async with session() as session:
+        query = select(ObjectHashtag).where(ObjectHashtag.hashtag_id == hashtag_id)
+        result = await session.execute(query)
+        objects = result.scalars().all()
+
+        if objects:
+            raise DependencyConflictError
+
+        hashtag = await session.get(Hashtag, id)
+
+        if not hashtag:
+            raise NotFoundedError
+
+        await session.delete(hashtag)
+        await session.commit()
+        await create_logs(session, admin_id, f"удален хештег {hashtag.name}")
         await session.close()
 
     return "successful"

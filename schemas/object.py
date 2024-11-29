@@ -115,6 +115,7 @@ class ObjectUpdate(ObjectBase):
 class ObjectUpdatePhotosConvenience(BaseModel):
     removed_photos: List[str] = None
     convenience: List[int]
+    hashtag: List[int]
 
     @model_validator(mode='before')
     @classmethod
