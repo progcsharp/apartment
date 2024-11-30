@@ -90,10 +90,17 @@ class ObjectResponse(ObjectBase):
     author: Author
     conveniences: List[Convenience]
     letter: str = None
+    reservation_count: int = None
 
 
 @remove_field('letter')
-class PublicObject(ObjectResponse):
+class PublicObject(ObjectBase):
+    id: int
+    photos: List[str]
+    city: City
+    apartment: Apartment
+    author: Author
+    conveniences: List[Convenience]
     approve_reservation: Union[List[Reservation], None]
     hashtags: List[Hashtag]
 

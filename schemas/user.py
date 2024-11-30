@@ -86,6 +86,7 @@ class UserUpdateAdmin(BaseModel):
     fullname: str
     phone: str
     mail: str
+    balance: int
 
 
 class UserUpdate(BaseModel):

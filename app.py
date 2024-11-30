@@ -22,6 +22,7 @@ from routers.reservation import router as reservation_router
 from routers.tariff import router as tariff_router
 from routers.hashtag import router as hashtag_router
 from routers.admin import router as admin_router
+from routers.mail import router as mail_router
 
 
 app = FastAPI(debug=False)
@@ -50,6 +51,7 @@ app.include_router(router=client_router)
 app.include_router(router=reservation_router)
 app.include_router(router=hashtag_router)
 app.include_router(router=admin_router)
+app.include_router(router=mail_router)
 
 
 @manager.user_loader()

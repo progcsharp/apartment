@@ -25,7 +25,7 @@ async def delete_user(id, session, admin_id):
 
         await session.delete(user)
         await session.commit()
-        await create_logs(session, admin_id, f"Пользователь удален: почта {user.mail}")
+        await create_logs(session, admin_id, f"Удален пользователь: почта {user.mail}")
         await session.close()
     return "successful"
 
@@ -86,7 +86,7 @@ async def delete_apartment(id, session, admin_id):
 
         await session.delete(apartment)
         await session.commit()
-        await create_logs(session, admin_id, f"Удален тип недвижимости {apartment.name}")
+        await create_logs(session, admin_id, f"Удален Тип недвижимости {apartment.name}")
         await session.close()
     return "successful"
 
@@ -107,7 +107,7 @@ async def delete_convenience(id, session, admin_id):
 
         await session.delete(convenience)
         await session.commit()
-        await create_logs(session, admin_id, f"удалено удобство {convenience.name}")
+        await create_logs(session, admin_id, f"Удалено удобство {convenience.name}")
         await session.close()
 
     return "successful"
@@ -122,14 +122,14 @@ async def delete_hashtag(hashtag_id, session, admin_id):
         if objects:
             raise DependencyConflictError
 
-        hashtag = await session.get(Hashtag, id)
+        hashtag = await session.get(Hashtag, hashtag_id)
 
         if not hashtag:
             raise NotFoundedError
 
         await session.delete(hashtag)
         await session.commit()
-        await create_logs(session, admin_id, f"удален хештег {hashtag.name}")
+        await create_logs(session, admin_id, f"Удален хештег {hashtag.name}")
         await session.close()
 
     return "successful"
@@ -165,7 +165,7 @@ async def delete_object(object_id, user, session):
         await session.delete(object)
         await session.commit()
         if user.is_admin:
-            await create_logs(session, user.id, f"админ удалил объект {object.name} пользователя {object.author_id}")
+            await create_logs(session, user.id, f"Удален  объект {object.name} пользователя ID:{object.author_id}")
         else:
             await create_logs(session, user.id, f"Удален объект {object.name}")
         await session.close()
@@ -189,9 +189,9 @@ async def delete_reservation(user, reservation_id, session):
         await session.delete(reservation)
         await session.commit()
         if user.is_admin:
-            await create_logs(session, user.id, f"Админ удалил бронь объекта {reservation.object_id}")
+            await create_logs(session, user.id, f"Удалена бронь объекта ID:{reservation.object_id}")
         else:
-            await create_logs(session, user.id, f"Удалена броль объекта {reservation.object_id}")
+            await create_logs(session, user.id, f"Удалена броль объекта ID:{reservation.object_id}")
         await session.close()
 
     return "successful"
@@ -238,7 +238,7 @@ async def client_delete(user, client_id, session):
             await session.execute(delete(UserClient).where(UserClient.client_id == client_id))
             await session.execute(delete(Reservation).where(Reservation.client_id == client_id))
             await session.commit()
-            await create_logs(session, user.id, f"Админ удалил клиента {client.phone}")
+            await create_logs(session, user.id, f"Удален клиент {client.phone}")
             await session.close()
 
             return "successful"
@@ -255,7 +255,7 @@ async def client_delete(user, client_id, session):
         await session.execute(delete(UserClient).where(UserClient.client_id == client_id))
         await session.execute(delete(Reservation).where(Reservation.client_id == client_id))
         await session.commit()
-        await create_logs(session, user.id, f"Удалена клиента {client.id} и пользователя {user.id}")
+        await create_logs(session, user.id, f"Удален клиент ID:{client.id} из списка пользователя ID:{user.id}")
         await session.close()
 
         return "successful"

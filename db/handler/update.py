@@ -2,11 +2,11 @@ from datetime import date, timedelta
 from service import mail
 
 from fastapi_mail import MessageSchema, MessageType, FastMail
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, func
 from sqlalchemy.orm import selectinload
 
 from config import mail_conf
-from db import User, Tariff, Object, Reservation, City, ObjectConvenience, Server, Region, ObjectHashtag
+from db import User, Tariff, Object, Reservation, City, ObjectConvenience, Server, Region, ObjectHashtag, Client
 from db.handler import check_available_time
 from db.handler.create import create_logs, create_object_hashtag
 from db.handler.validate import calculate_end_date
@@ -47,7 +47,7 @@ async def update_user_activate(user_data,  session, admin_id):
         user.is_active = not user.is_active
         # session.add(user)
         await session.commit()
-        await create_logs(session, admin_id, f"у пользователя измене статус 'активен' на {user.is_active}")
+        await create_logs(session, admin_id, f"Пользователь - статус: {'активирован' if user.is_active else 'деактивирован'}")
         await session.close()
     return user
 
@@ -69,7 +69,7 @@ async def update_object_activate(object_data, user, session):
         object.active = not object.active
         # session.add(object)
         await session.commit()
-        await create_logs(session, user.id, f"Статус объекта {object.id} изменен на {object.active}")
+        await create_logs(session, user.id, f"Статус объекта {object.id} изменен на {'активирован' if object.active else 'деактивирован'}")
         await session.close()
 
         if object.active:
@@ -92,6 +92,12 @@ async def update_object_activate(object_data, user, session):
 
             fm = FastMail(mail_conf)
             await fm.send_message(message)
+
+        query_reservation_count = select(func.count(Reservation.object_id)).where(Reservation.object_id == object.id). \
+            where(Reservation.status != "rejected").where(Reservation.status != "completed")
+        result = await session.execute(query_reservation_count)
+        reservation_count = result.scalar()
+        object.reservation_count = reservation_count
 
     return object
 
@@ -164,15 +170,21 @@ async def update_object_by_id(object_data, convenience_and_removed_photos, files
             .values(**dict(object_data))
         )
 
-        for tag_id in object_data.hashtags:
+        for tag_id in create_array_hashtag:
             await create_object_hashtag(object.id, tag_id, session)
 
         await session.execute(stmt)
         await session.commit()
         if user.is_admin:
-            await create_logs(session, user.id, f"админ изменил объект {object.id} пользователя {object.author_id}")
+            await create_logs(session, user.id, f"Изменен объект ID:{object.id} пользователя ID:{object.author_id}")
         else:
-            await create_logs(session, user.id, f"Изменение объекта {object.id}")
+            await create_logs(session, user.id, f"Изменен объект ID:{object.id}")
+
+        query_reservation_count = select(func.count(Reservation.object_id)).where(Reservation.object_id == object.id). \
+            where(Reservation.status != "rejected").where(Reservation.status != "completed")
+        result = await session.execute(query_reservation_count)
+        reservation_count = result.scalar()
+        object.reservation_count = reservation_count
         await session.close()
         return object
 
@@ -220,8 +232,8 @@ async def update_reservation_status(reservation_data, user, session):
         # session.add(reservation)
         message_approve = message_mail("approve reservation")['description'].replace("(?CLIENT_FULLNAME)", reservation.client.fullname).\
             replace("(?OBJECT_NAME)", reservation.object.name).\
-            replace("(?OBJECT_ADDRESS)", f"{reservation.object.city},{reservation.object.address}").\
-            replace("(?START_DATE)", reservation.start_date).replace("(?END_DATE)", reservation.end_date).\
+            replace("(?OBJECT_ADDRESS)", f"{reservation.object.city.name},{reservation.object.address}").\
+            replace("(?START_DATE)", str(reservation.start_date)).replace("(?END_DATE)", str(reservation.end_date)).\
             replace("(?ADULTS)", reservation.adult_places).replace("(?KIDS)", reservation.child_places).\
             replace("(?PRICE)", reservation.object.price)
 
@@ -229,13 +241,13 @@ async def update_reservation_status(reservation_data, user, session):
 
         if reservation_data.status == "approved":
             message = MessageSchema(
-                subject=message_approve["subject"],
+                subject=message_mail("approve reservation")["subject"],
                 recipients=[reservation.client.email],
                 body=f'{message_approve}',
                 subtype=MessageType.html)
         elif reservation_data.status == "rejected":
             message = MessageSchema(
-                subject=message_reject["subject"],
+                subject= message_mail("reject reservation")["subject"],
                 recipients=[reservation.client.email],
                 body=f'{message_reject}',
                 subtype=MessageType.html)
@@ -244,9 +256,9 @@ async def update_reservation_status(reservation_data, user, session):
         await session.commit()
         # await create_logs(session, , f"Создана бронь {reservation.id}")
         if user.is_admin:
-            await create_logs(session, user.id, f"Aдмин изменил статус брони {reservation.id} на {reservation.status}")
+            await create_logs(session, user.id, f"Изменен статус брони ID:{reservation.id} на {reservation.status}")
         else:
-            await create_logs(session, user.id, f"Изменение статуса брони {reservation.id} на {reservation.status}")
+            await create_logs(session, user.id, f"Изменен статус брони ID:{reservation.id} на {reservation.status}")
         await session.close()
     return reservation
 
@@ -280,10 +292,9 @@ async def update_reservation(user, reservation_data, session):
 
         await session.execute(stmt)
         await session.commit()
-        if user.is_admin:
-            await create_logs(session, user.id, f"Админ изменил бронь {reservation.id}")
-        else:
-            await create_logs(session, user.id, f"Изменение брони {reservation.id}")
+
+        await create_logs(session, user.id, f"Изменена бронь ID:{reservation.id}")
+
         await session.close()
         return reservation
 
@@ -301,9 +312,9 @@ async def update_user_tariff_activate(tariff_id, user_id, balance, session):
         user = result.scalar_one_or_none()
 
         if user.tariff_id != tariff_id:
-            message_log = f"Пользователь сменил тариф на {tariff.name}."
+            message_log = f"Выбран тариф: {tariff.name}"
         else:
-            message_log = f'Пользователь Добавили баланс: {balance}'
+            message_log = f'Добавлен баланс: {balance}'
 
         if not user and not tariff:
             raise NotFoundedError
@@ -337,7 +348,7 @@ async def update_user_password(user_data, user_id, session):
         user.password = password
 
         await session.commit()
-        await create_logs(session, user.id, f"изменил пароль")
+        await create_logs(session, user.id, f"Сменил пароль")
         await session.close()
 
     return user
@@ -360,7 +371,7 @@ async def update_user(user_data, session):
 
         await session.execute(stmt)
         await session.commit()
-        await create_logs(session, user.id, f"обновил данные")
+        await create_logs(session, user.id, f"Обновлены контактные данные")
         await session.close()
 
     return user
@@ -402,7 +413,7 @@ async def update_tariff(tariff_data, session, admin_id):
         # session.add(tariff)
         await session.execute(stmt)
         await session.commit()
-        await create_logs(session, admin_id, f"админ измени таприф {tariff.id}")
+        await create_logs(session, admin_id, f"Изменен тариф ID:{tariff.id}")
         await session.close()
 
     return tariff
@@ -425,7 +436,7 @@ async def update_server(server_data, session, admin_id):
         )
         await session.execute(stmt)
         await session.commit()
-        await create_logs(session, admin_id, f"админ измени сервер {server.id}")
+        await create_logs(session, admin_id, f"Изменен сервер ID:{server.id}")
         await session.close()
 
     return server
@@ -447,7 +458,8 @@ async def server_activate(server_id, session, admin_id):
         server.default = True
 
         await session.commit()
-        await create_logs(session, admin_id, f"админ измени дефолтный сервер {server.id}")
+        await create_logs(session, admin_id, f"Изменен сервер по умолчанию ID:{server.id}")
         await session.close()
 
         return server
+

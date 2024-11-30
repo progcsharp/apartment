@@ -47,7 +47,8 @@
     "subject": "Деактивация пользователя ",
     "description": "Здравствуйте! Вас деактивировали",
     "name": "Деактивация",
-    "slug": "deactivate"
+    "slug": "deactivate",
+    "constructions": []
   },
   "new reservation": {
     "subject": "Ваша бронь принята в обработку",
@@ -78,7 +79,7 @@
       {
         "name": "Адрес объекта",
         "construction": "(?OBJECT_ADDRESS)"
-      }
+      },
       {
         "name": "Начальный день бронирования",
         "construction": "(?START_DATE)"

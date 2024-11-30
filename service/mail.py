@@ -30,6 +30,7 @@ mail_conf = ConnectionConfig(
 
 # reject_reservation = data['reject reservation']
 
+
 def message_mail(name):
     with open('mail.json', 'r', encoding='utf-8') as f:
         data = json.load(f)

@@ -194,9 +194,17 @@ async def get_all_object(user, session):
                 options(selectinload(Object.apartment)).options(selectinload(Object.author)). \
                 options(selectinload(Object.conveniences)).options(selectinload(Object.approve_reservation))
         result = await session.execute(query)
-        object = result.scalars().all()
+        objects = result.scalars().all()
 
-    return object
+        for object in objects:
+            query_reservation_count = select(func.count(Reservation.object_id)).where(
+                Reservation.object_id == object.id). \
+                where(Reservation.status != "rejected").where(Reservation.status != "completed")
+            result = await session.execute(query_reservation_count)
+            reservation_count = result.scalar()
+            object.reservation_count = reservation_count
+
+    return objects
 
 
 async def get_by_id_object(id, session):
@@ -232,6 +240,12 @@ async def get_by_id_object_by_user(object_id, session):
 
         if not object:
             raise NotFoundedError
+
+        # query_reservation_count = select(func.count(Reservation.object_id)).where(Reservation.object_id == object.id). \
+        #     where(Reservation.status != "rejected").where(Reservation.status != "completed")
+        # result = await session.execute(query_reservation_count)
+        # reservation_count = result.scalar()
+        # object.reservation_count = reservation_count
 
         await session.close()
     return object

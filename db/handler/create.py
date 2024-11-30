@@ -57,9 +57,9 @@ async def create_user(user_data, session, admin = None):
         session.add(user)
         await session.commit()
         if admin:
-            await create_logs(session, admin.id, f"админ создал пользователя id:{user.id}, mail:{user.mail}, phone:{user.phone}")
+            await create_logs(session, admin.id, f"Добавлен пользователь id:{user.id}, mail:{user.mail}, phone:{user.phone}")
         else:
-            await create_logs(session, user.id, f"пользователь зарегестрировался")
+            await create_logs(session, user.id, f"Пользователь зарегистрирован")
         await session.close()
     return user
 
@@ -70,7 +70,7 @@ async def create_region(region_data, session, admin):
     async with session() as session:
         session.add(region)
         await session.commit()
-        await create_logs(session, admin.id, f"админ создал регион {region.name}")
+        await create_logs(session, admin.id, f"Добавлен регион {region.name}")
         await session.close()
 
     return region
@@ -82,7 +82,7 @@ async def create_hashtag(name, session, admin):
     async with session() as session:
         session.add(hashtag)
         await session.commit()
-        await create_logs(session, admin.id, f"Админ создал хештег {hashtag.name}")
+        await create_logs(session, admin.id, f"Добавлен хештег {hashtag.name}")
         await session.close()
 
     return hashtag
@@ -96,7 +96,7 @@ async def create_city(city_data, session, admin):
         await session.commit()
         region = await session.execute(select(Region).where(Region.id == city_data.region_id))
         city.region = region.scalar_one_or_none()
-        await create_logs(session, admin.id, f"админ создал город {city.name}")
+        await create_logs(session, admin.id, f"Добавлен город {city.name}")
         await session.close()
 
     return city
@@ -108,7 +108,7 @@ async def create_apartment(apartment_data, session, admin):
     async with session() as session:
         session.add(apartment)
         await session.commit()
-        await create_logs(session, admin.id, f"админ создал тип недвижимости {apartment.name}")
+        await create_logs(session, admin.id, f"Добавлен Тип недвижимости {apartment.name}")
         await session.close()
     return apartment
 
@@ -120,7 +120,7 @@ async def create_convenience(convenience_data, session, admin):
     async with session() as session:
         session.add(convenience)
         await session.commit()
-        await create_logs(session, admin.id, f"админ создал удобство {convenience.name}")
+        await create_logs(session, admin.id, f"Добавлено удобство {convenience.name}")
         await session.close()
     return convenience
 
@@ -162,7 +162,7 @@ async def create_object(object_data, files, user_id, session):
         for tag_id in object_data.hashtags:
             await create_object_hashtag(object.id, tag_id, session)
 
-        await create_logs(session, user_id, f"Создал объект {object.id}")
+        await create_logs(session, user_id, f"Добавлен объект ID:{object.id}")
 
         await session.close()
 
@@ -190,7 +190,7 @@ async def create_client(client_data, session, user_id=None):
             user_client = UserClient(user_id=user.id, client_id=client.id)
             session.add(user_client)
             await session.commit()
-            await create_logs(session, user_id, f"Создан клиент {client.id}, создана связь между клиентом и пользователем")
+            await create_logs(session, user_id, f"Пользователем добавлен клиент ID:{client.id} ")
         await session.close()
     return client
 
@@ -224,13 +224,13 @@ async def create_reservation(user_id, reservation_data, session):
         else:
             raise ReservationError
 
-        await create_logs(session, user_id, f"Создана бронь {reservation.id}")
+        await create_logs(session, user_id, f"Добавлена бронь ID:{reservation.id}")
 
         await session.close()
         message_new_reservation = message_mail("new reservation")['description'].replace("(?CLIENT_FULLNAME)", client.fullname)
         message = MessageSchema(
-            subject=message_new_reservation["subject"],
-            recipients=[reservation.client.email],
+            subject=message_mail("new reservation")["subject"],
+            recipients=[client.email],
             body=f'{message_new_reservation}',
             subtype=MessageType.html)
         fm = FastMail(mail_conf)
@@ -285,7 +285,7 @@ async def client_reservation_create(client_data, reservation_data, session):
         reservation.letter = object.letter
         session.add(reservation)
         await session.commit()
-        await create_logs(session, object.author_id, f"Создана бронь {reservation.id}. Создан клиент {client.id}")
+        await create_logs(session, object.author_id, f"Добавлена бронь ID:{reservation.id}. Добавлен клиент ID:{client.id}")
         await session.close()
         return reservation
 
@@ -317,7 +317,7 @@ async def create_tariff(tariff_data, session, admin_id):
     async with session() as session:
         session.add(new_tariff)
         await session.commit()
-        await create_logs(session, admin_id, f"Создан тариф {new_tariff.id}")
+        await create_logs(session, admin_id, f"Добавлен тариф ID:{new_tariff.id}")
         await session.close()
     return new_tariff
 
@@ -327,7 +327,7 @@ async def create_server(server_data, session, admin_id):
     async with session() as session:
         session.add(server)
         await session.commit()
-        await create_logs(session, admin_id, f"Создан сервер {server.id}")
+        await create_logs(session, admin_id, f"Добавлен сервер ID:{server.id}")
         await session.close()
     return server
 
@@ -344,7 +344,7 @@ async def create_client_user(client_id, user_id, session):
         client_user = UserClient(user_id=user_id, client_id=client_id)
         session.add(client_user)
         await session.commit()
-        await create_logs(session, user_id, f"Создал связь с клиентом {client.id}")
+        await create_logs(session, user_id, f"Добавлен клиент ID:{client.id} пользователю ")
         await session.close()
     return client
 
