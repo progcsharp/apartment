@@ -290,6 +290,14 @@ async def get_user_object_by_hashtag(user_id, hashtags, session):
         result = await session.execute(query)
         objects = result.scalars().all()
 
+        for object in objects:
+            query_reservation_count = select(func.count(Reservation.object_id)).where(
+                Reservation.object_id == object.id). \
+                where(Reservation.status != "rejected").where(Reservation.status != "completed")
+            result = await session.execute(query_reservation_count)
+            reservation_count = result.scalar()
+            object.reservation_count = reservation_count
+
         await session.close()
     return objects
 

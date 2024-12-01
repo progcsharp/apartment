@@ -103,6 +103,7 @@ class PublicObject(ObjectBase):
     conveniences: List[Convenience]
     approve_reservation: Union[List[Reservation], None]
     hashtags: List[Hashtag]
+    reservation_count: int = None
 
 
 class ObjectUpdate(ObjectBase):
